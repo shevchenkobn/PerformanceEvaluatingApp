@@ -14,7 +14,7 @@ namespace PerformanceEvaluatingApp
     {
         protected void Application_Start()
         {
-            Database.SetInitializer(new CreateDatabaseIfNotExists<WebsitesContext>());
+            Database.SetInitializer(new DropCreateDatabaseIfModelChanges<WebsitesContext>());
 
             AreaRegistration.RegisterAllAreas();
             FilterConfig.RegisterGlobalFilters(GlobalFilters.Filters);

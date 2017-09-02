@@ -1,7 +1,20 @@
-﻿@{
+﻿@model List<PerformanceEvaluatingApp.Models.WebPage>
+@{
     ViewBag.Title = "Home Page";
 }
-
+@if (Model != null)
+{
+    <ul>
+        @foreach (var webPage in Model)
+        {
+            <li>@(webPage.RequestUri + " " + webPage.RequestTime)</li>
+        }
+    </ul>
+}
+<form method="post">
+    <input type="url" name="address" />
+    <input type="submit" />
+</form>
 <div class="jumbotron">
     <h1>ASP.NET</h1>
     <p class="lead">ASP.NET is a free web framework for building great Web sites and Web applications using HTML, CSS and JavaScript.</p>
