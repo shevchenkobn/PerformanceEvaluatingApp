@@ -1,0 +1,31 @@
+﻿@model IEnumerable<PerformanceEvaluatingApp.Models.Website>
+
+@{
+    ViewBag.Title = "Tested Websites";
+}
+
+<h2>@ViewBag.Title</h2>
+<h3>To see details on particular website click on its row</h3>
+
+<table class="table table-hover table-responsive table-striped">
+    <tr class="info">
+        <th>
+            @Html.DisplayNameFor(model => model.Name)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.AverageRequestTime)
+        </th>
+    </tr>
+
+@foreach (var item in Model) {
+    <tr>
+        <td>
+            @Html.ActionLink(Html.DisplayTextFor(modelItem => item.Name).ToHtmlString(), "History", "Home", null, new { address = Html.DisplayFor(modelItem => item.Name).ToHtmlString() })
+        </td>
+        <td>
+            @Html.ActionLink(Html.DisplayTextFor(modelItem => item.AverageRequestTime).ToHtmlString(), "History", "Home", null, new { address = Html.DisplayFor(modelItem => item.AverageRequestTime).ToHtmlString() })
+        </td>
+    </tr>
+}
+
+</table>

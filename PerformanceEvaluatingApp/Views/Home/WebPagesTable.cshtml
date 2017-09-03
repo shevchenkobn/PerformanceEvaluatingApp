@@ -1,0 +1,7 @@
+﻿@model IEnumerable<PerformanceEvaluatingApp.Models.WebPage>
+@{
+    var webPages = Model.OrderBy(w => w.RequestUri).ThenByDescending(w => w.RequestTime);
+}
+<h2 class="text-info">Requests results for website <i>@ViewBag.CrawledWebsite</i></h2>
+@{Html.RenderPartial("WebPagesTable", Model)}
+

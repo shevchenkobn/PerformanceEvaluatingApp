@@ -23,6 +23,7 @@ namespace PerformanceEvaluatingApp.Controllers
     {
         const int DefaultNumberOfTries = 10;
         const int MaxNumberOfTries = 25;
+        const int MinNumberOfTries = 2;
         WebsitesContext _websitesContext = new WebsitesContext();
         CrawlerX _crawler;
         List<WebPage> _sitePages;
@@ -38,11 +39,13 @@ namespace PerformanceEvaluatingApp.Controllers
         [HttpGet]
         public ActionResult Index(string address)
         {
+            SetIndexActionFormAttributes();
             return View();
         }
         [HttpPost,ActionName("Index")]
         public async Task<ActionResult> IndexPost(string address, bool? startFromCurrentLocation, int? numberOfTries)
         {
+            SetIndexActionFormAttributes();
             Uri url;
             if (Uri.TryCreate(address, UriKind.RelativeOrAbsolute, out url) && (url.Scheme == Uri.UriSchemeHttp || url.Scheme == Uri.UriSchemeHttps))
             {
@@ -68,7 +71,7 @@ namespace PerformanceEvaluatingApp.Controllers
             
             _sitePages = new List<WebPage>();
             int tries;
-            if (numberOfTries == null || numberOfTries < 2 || numberOfTries > MaxNumberOfTries)
+            if (numberOfTries == null || numberOfTries < MinNumberOfTries || numberOfTries > MaxNumberOfTries)
                 tries = DefaultNumberOfTries;
             else
                 tries = (int)numberOfTries;
@@ -167,6 +170,12 @@ namespace PerformanceEvaluatingApp.Controllers
                 currentAverage = _sitePages.Average(s => s.RequestTime);
             _website.AverageRequestTime = (oldAverage * tries + currentAverage) / (tries + 1);
             _website.Tries++;
+        }
+        void SetIndexActionFormAttributes()
+        {
+            ViewBag.DefaultNumberOfTries = 10;
+            ViewBag.MaxNumberOfTries = 25;
+            ViewBag.MinNumberOfTries = 2;
         }
     }
 }

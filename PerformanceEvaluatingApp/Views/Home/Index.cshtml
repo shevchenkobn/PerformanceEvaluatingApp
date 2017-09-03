@@ -1,44 +1,32 @@
-﻿@model List<PerformanceEvaluatingApp.Models.WebPage>
+﻿@model IEnumerable<PerformanceEvaluatingApp.Models.WebPage>
 @{
     ViewBag.Title = "Home Page";
 }
+
+<form class="form-inline" method="post">
+    <div class="form-group">
+        <label for="address">Website's URL:</label>
+        <input class="form-control" type="url" id="address "name="address" />
+    </div>
+    <div class="form-group">
+        <label for="numberOfTries">Number of tests:</label>
+        <input class="form-control" type="number" id="numberOfTries " name="numberOfTries" 
+               min="@ViewBag.MaxNumberOfTries" max="@ViewBag.MaxNumberOfTries"
+               value="@ViewBag.DefaultNumberOfTries"/>
+    </div>
+    <div class="checkbox">
+        <label><input type="checkbox" name="startFromCurrentLocation" checked="checked"> Do not truncate URL</label>
+    </div>
+    <input class="btn btn-info" type="submit" />
+</form>
 @if (Model != null)
 {
-    <ul>
-        @foreach (var webPage in Model)
-        {
-            <li>@(webPage.RequestUri + " " + webPage.RequestTime)</li>
-        }
-    </ul>
+    @{Html.RenderPartial("WebPagesTable", Model)}
+    <div class="well">To see all results for @Html.ActionLink((string)ViewBag.CrawledWebsite, "History", "Home", null, new { address = (string) ViewBag.CrawledWebsite })</div>
 }
-<form method="post">
-    <input type="url" name="address" />
-    <input type="submit" />
-</form>
-<div class="jumbotron">
-    <h1>ASP.NET</h1>
-    <p class="lead">ASP.NET is a free web framework for building great Web sites and Web applications using HTML, CSS and JavaScript.</p>
-    <p><a href="https://asp.net" class="btn btn-primary btn-lg">Learn more &raquo;</a></p>
-</div>
-
-<div class="row">
-    <div class="col-md-4">
-        <h2>Getting started</h2>
-        <p>
-            ASP.NET MVC gives you a powerful, patterns-based way to build dynamic websites that
-            enables a clean separation of concerns and gives you full control over markup
-            for enjoyable, agile development.
-        </p>
-        <p><a class="btn btn-default" href="https://go.microsoft.com/fwlink/?LinkId=301865">Learn more &raquo;</a></p>
+else
+{
+    <div class="alert alert-info">
+        <strong>To test site performance fill in form above</strong>
     </div>
-    <div class="col-md-4">
-        <h2>Get more libraries</h2>
-        <p>NuGet is a free Visual Studio extension that makes it easy to add, remove, and update libraries and tools in Visual Studio projects.</p>
-        <p><a class="btn btn-default" href="https://go.microsoft.com/fwlink/?LinkId=301866">Learn more &raquo;</a></p>
-    </div>
-    <div class="col-md-4">
-        <h2>Web Hosting</h2>
-        <p>You can easily find a web hosting company that offers the right mix of features and price for your applications.</p>
-        <p><a class="btn btn-default" href="https://go.microsoft.com/fwlink/?LinkId=301867">Learn more &raquo;</a></p>
-    </div>
-</div>
+}
