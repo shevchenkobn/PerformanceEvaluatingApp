@@ -15,9 +15,14 @@ using System.Net;
 
 namespace PerformanceEvaluatingApp.Controllers
 {
+    public enum Errors
+    {
+        BadUrlGiven, NoTestedWebsites, WebsiteIsNotTested, CrawlerError
+    }
     public class HomeController : Controller
     {
         const int DefaultNumberOfTries = 10;
+        const int MaxNumberOfTries = 25;
         WebsitesContext _websitesContext = new WebsitesContext();
         CrawlerX _crawler;
         List<WebPage> _sitePages;
@@ -36,12 +41,12 @@ namespace PerformanceEvaluatingApp.Controllers
             return View();
         }
         [HttpPost,ActionName("Index")]
-        public async Task<ActionResult> IndexPost(string address, bool? keepAbsolute, int? numberOfTries)
+        public async Task<ActionResult> IndexPost(string address, bool? startFromCurrentLocation, int? numberOfTries)
         {
             Uri url;
             if (Uri.TryCreate(address, UriKind.RelativeOrAbsolute, out url) && (url.Scheme == Uri.UriSchemeHttp || url.Scheme == Uri.UriSchemeHttps))
             {
-                if (keepAbsolute == true)
+                if (startFromCurrentLocation != true)
                 {
                     string[] addressPieces = address.Split(new string[] { "://", "/" }, StringSplitOptions.RemoveEmptyEntries);
                     address = addressPieces[0] + "://" + addressPieces[1];
@@ -50,7 +55,7 @@ namespace PerformanceEvaluatingApp.Controllers
             }
             else
             {
-                ViewBag.BadUrl = true;
+                ViewBag.Error = Errors.BadUrlGiven;
                 return View();
             }
 
@@ -62,9 +67,22 @@ namespace PerformanceEvaluatingApp.Controllers
                 };
             
             _sitePages = new List<WebPage>();
-            for (int i = 0, tries = numberOfTries != null ? (int)numberOfTries : DefaultNumberOfTries; i < numberOfTries; i++)
+            int tries;
+            if (numberOfTries == null || numberOfTries < 2 || numberOfTries > MaxNumberOfTries)
+                tries = DefaultNumberOfTries;
+            else
+                tries = (int)numberOfTries;
+            for (int i = 0; i < tries; i++)
             {
                 var result = await _crawler.CrawlAsync(url);
+                if (result.ErrorOccurred)
+                {
+                    ViewBag.Error = Errors.CrawlerError;
+                    if (ViewBag.FailedTries == null)
+                        ViewBag.FailedTries = 1;
+                    else
+                        ViewBag.FailedTries++;
+                }
             }
 
             UpdateAverageRequestTime();
@@ -76,15 +94,22 @@ namespace PerformanceEvaluatingApp.Controllers
 
         public ActionResult History(string address)
         {
+            if (_websitesContext.Websites.Count() == 0)
+            {
+                ViewBag.Error = Errors.NoTestedWebsites;
+                return View("Index");
+            }
+            else if (string.IsNullOrEmpty(address))
+                return View("ListWebsites", _websitesContext.Websites);
             Website website;
+            ViewBag.WebsiteName = address;
             if ((website = _websitesContext.Websites.Where(w => w.Name == address).FirstOrDefault()) != null)
             {
-                ViewBag.WebsiteName = website.Name;
-                return View(website.WebPages);
+                return View("ListSitePages", website.WebPages);
             }
             else
             {
-                ViewBag.WebsiteAbsent = true;
+                ViewBag.Error = Errors.WebsiteIsNotTested;
                 return View("Index");
             }
         }
@@ -137,7 +162,10 @@ namespace PerformanceEvaluatingApp.Controllers
         {
             double oldAverage = _website.AverageRequestTime;
             int tries = _website.Tries;
-            _website.AverageRequestTime = (oldAverage * tries + _sitePages.Average(s => s.RequestTime)) / tries + 1;
+            double currentAverage = 0;
+            if (_sitePages.Count > 0)
+                currentAverage = _sitePages.Average(s => s.RequestTime);
+            _website.AverageRequestTime = (oldAverage * tries + currentAverage) / (tries + 1);
             _website.Tries++;
         }
     }
