@@ -11,9 +11,10 @@ namespace PerformanceEvaluatingApp.Models
     {
         [Key]
         public int Id { get; set; }
+        [Index(IsUnique = true)]
+        [MaxLength(450)]
         public string Name { get; set; }
         public double AverageRequestTime { get; set; }
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int Tries { get; set; }
         public ICollection<WebPage> WebPages { get; set; }
 

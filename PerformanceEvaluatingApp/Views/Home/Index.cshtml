@@ -3,30 +3,41 @@
     ViewBag.Title = "Home Page";
 }
 
-<form class="form-inline" method="post">
+<form method="post" action="/Home/Index">
     <div class="form-group">
         <label for="address">Website's URL:</label>
         <input class="form-control" type="url" id="address "name="address" />
     </div>
-    <div class="form-group">
-        <label for="numberOfTries">Number of tests:</label>
-        <input class="form-control" type="number" id="numberOfTries " name="numberOfTries" 
-               min="@ViewBag.MaxNumberOfTries" max="@ViewBag.MaxNumberOfTries"
-               value="@ViewBag.DefaultNumberOfTries"/>
+    <div class="row">
+        <div class="col-xs-6 col-md-3 col-sm-4">
+            <div class="form-group">
+                <input type="checkbox" name="startFromCurrentLocation" value="true" id="fancy-checkbox-default" autocomplete="on" />
+                @*<input type="hidden" name="startFromCurrentLocation" value="false" />*@
+                <div class="btn-group">
+                    <label for="fancy-checkbox-default" class="btn btn-default">
+                        <span class="glyphicon glyphicon-ok"></span>
+                        <span> </span>
+                    </label>
+                    <label for="fancy-checkbox-default" class="btn btn-default active">
+                        Do not truncate URL
+                    </label>
+                </div>
+            </div>
+        </div>
+        <div class="col-xs-6 col-md-9 col-sm-8">
+            <button class="btn btn-block btn-group btn-info" type="submit">Test</button>
+        </div>
     </div>
-    <div class="checkbox">
-        <label><input type="checkbox" name="startFromCurrentLocation" checked="checked"> Do not truncate URL</label>
-    </div>
-    <input class="btn btn-info" type="submit" />
 </form>
 @if (Model != null)
 {
-    @{Html.RenderPartial("WebPagesTable", Model)}
-    <div class="well">To see all results for @Html.ActionLink((string)ViewBag.CrawledWebsite, "History", "Home", null, new { address = (string) ViewBag.CrawledWebsite })</div>
+    <h2 class="text-info">Requests results for website <a href="@ViewBag.CrawledWebsite.Name" target="_blank">@ViewBag.CrawledWebsite.Name</a></h2>
+    { Html.RenderPartial("WebPagesTable", Model); }
+    <div class="well">To see all results for @Html.ActionLink(" the website", "History", "Home", new { id = (int) ViewBag.CrawledWebsite.Id }, null)</div>
 }
 else
 {
-    <div class="alert alert-info">
-        <strong>To test site performance fill in form above</strong>
+    <div class="alert alert-info text-center">
+        <strong>To test site performance fill in the form above</strong>
     </div>
 }

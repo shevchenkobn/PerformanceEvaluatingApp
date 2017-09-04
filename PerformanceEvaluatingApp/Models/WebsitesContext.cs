@@ -10,5 +10,9 @@ namespace PerformanceEvaluatingApp.Models
     {
         public DbSet<WebPage> WebPages { get; set; }
         public DbSet<Website> Websites { get; set; }
+        public WebsitesContext()
+        {
+            Configuration.LazyLoadingEnabled = true;
+        }
     }
 }

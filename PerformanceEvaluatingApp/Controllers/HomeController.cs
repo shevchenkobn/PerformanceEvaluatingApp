@@ -21,9 +21,6 @@ namespace PerformanceEvaluatingApp.Controllers
     }
     public class HomeController : Controller
     {
-        const int DefaultNumberOfTries = 10;
-        const int MaxNumberOfTries = 25;
-        const int MinNumberOfTries = 2;
         WebsitesContext _websitesContext = new WebsitesContext();
         CrawlerX _crawler;
         List<WebPage> _sitePages;
@@ -39,15 +36,13 @@ namespace PerformanceEvaluatingApp.Controllers
         [HttpGet]
         public ActionResult Index(string address)
         {
-            SetIndexActionFormAttributes();
             return View();
         }
         [HttpPost,ActionName("Index")]
-        public async Task<ActionResult> IndexPost(string address, bool? startFromCurrentLocation, int? numberOfTries)
+        public async Task<ActionResult> IndexPost(string address, bool? startFromCurrentLocation)
         {
-            SetIndexActionFormAttributes();
             Uri url;
-            if (Uri.TryCreate(address, UriKind.RelativeOrAbsolute, out url) && (url.Scheme == Uri.UriSchemeHttp || url.Scheme == Uri.UriSchemeHttps))
+            if (Uri.TryCreate(address, UriKind.Absolute, out url) && (url.Scheme == Uri.UriSchemeHttp || url.Scheme == Uri.UriSchemeHttps))
             {
                 if (startFromCurrentLocation != true)
                 {
@@ -62,7 +57,7 @@ namespace PerformanceEvaluatingApp.Controllers
                 return View();
             }
 
-            _website = _websitesContext.Websites.Where(w => w.Name == address).SingleOrDefault();
+            _website = _websitesContext.Websites.Where(w => w.Name == url.AbsoluteUri).SingleOrDefault();
             if (_website == null)
                 _website = new Website
                 {
@@ -70,45 +65,33 @@ namespace PerformanceEvaluatingApp.Controllers
                 };
             
             _sitePages = new List<WebPage>();
-            int tries;
-            if (numberOfTries == null || numberOfTries < MinNumberOfTries || numberOfTries > MaxNumberOfTries)
-                tries = DefaultNumberOfTries;
-            else
-                tries = (int)numberOfTries;
-            for (int i = 0; i < tries; i++)
+            var result = await _crawler.CrawlAsync(url);
+            if (result.ErrorOccurred)
             {
-                var result = await _crawler.CrawlAsync(url);
-                if (result.ErrorOccurred)
-                {
-                    ViewBag.Error = Errors.CrawlerError;
-                    if (ViewBag.FailedTries == null)
-                        ViewBag.FailedTries = 1;
-                    else
-                        ViewBag.FailedTries++;
-                }
+                ViewBag.Error = Errors.CrawlerError;
             }
 
             UpdateAverageRequestTime();
             UpdateDatabase();
 
-            ViewBag.CrawledWebsite = url.AbsoluteUri;
+            ViewBag.CrawledWebsite = _website;
             return View(_sitePages);
         }
 
-        public ActionResult History(string address)
+        public ActionResult History(string id)
         {
             if (_websitesContext.Websites.Count() == 0)
             {
                 ViewBag.Error = Errors.NoTestedWebsites;
                 return View("Index");
             }
-            else if (string.IsNullOrEmpty(address))
+            int idInt;
+            if (string.IsNullOrEmpty(id) || !int.TryParse(id, out idInt))
                 return View("ListWebsites", _websitesContext.Websites);
-            Website website;
-            ViewBag.WebsiteName = address;
-            if ((website = _websitesContext.Websites.Where(w => w.Name == address).FirstOrDefault()) != null)
+            Website website = _websitesContext.Websites.Include(w => w.WebPages).Where(w => w.Id == idInt).FirstOrDefault();
+            if (website != null)
             {
-                return View("ListSitePages", website.WebPages);
+                return View("ListSitePages", website);
             }
             else
             {
@@ -170,12 +153,6 @@ namespace PerformanceEvaluatingApp.Controllers
                 currentAverage = _sitePages.Average(s => s.RequestTime);
             _website.AverageRequestTime = (oldAverage * tries + currentAverage) / (tries + 1);
             _website.Tries++;
-        }
-        void SetIndexActionFormAttributes()
-        {
-            ViewBag.DefaultNumberOfTries = 10;
-            ViewBag.MaxNumberOfTries = 25;
-            ViewBag.MinNumberOfTries = 2;
         }
     }
 }
