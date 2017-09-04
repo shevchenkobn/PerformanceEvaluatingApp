@@ -17,7 +17,7 @@ namespace PerformanceEvaluatingApp.Controllers
 {
     public enum Errors
     {
-        BadUrlGiven, NoTestedWebsites, WebsiteIsNotTested, CrawlerError
+        NoErrors, BadUrlGiven, NoTestedWebsites, WebsiteIsNotTested, CrawlerError
     }
     public class HomeController : Controller
     {
@@ -25,6 +25,8 @@ namespace PerformanceEvaluatingApp.Controllers
         CrawlerX _crawler;
         List<WebPage> _sitePages;
         Website _website;
+
+        Uri _url;
         
         public HomeController()
         {
@@ -41,34 +43,18 @@ namespace PerformanceEvaluatingApp.Controllers
         [HttpPost,ActionName("Index")]
         public async Task<ActionResult> IndexPost(string address, bool? startFromCurrentLocation)
         {
-            Uri url;
-            if (Uri.TryCreate(address, UriKind.Absolute, out url) && (url.Scheme == Uri.UriSchemeHttp || url.Scheme == Uri.UriSchemeHttps))
-            {
-                if (startFromCurrentLocation != true)
-                {
-                    string[] addressPieces = address.Split(new string[] { "://", "/" }, StringSplitOptions.RemoveEmptyEntries);
-                    address = addressPieces[0] + "://" + addressPieces[1];
-                    url = new Uri(address);
-                }
-            }
-            else
+            if (!ValidateAndSetUrl(address, startFromCurrentLocation))
             {
                 ViewBag.Error = Errors.BadUrlGiven;
                 return View();
             }
 
-            _website = _websitesContext.Websites.Where(w => w.Name == url.AbsoluteUri).SingleOrDefault();
-            if (_website == null)
-                _website = new Website
-                {
-                    Name = url.AbsoluteUri
-                };
-            
-            _sitePages = new List<WebPage>();
-            var result = await _crawler.CrawlAsync(url);
-            if (result.ErrorOccurred)
+            SetOrCreateWebsite();
+
+            if (!(await CrawlAsync()))
             {
                 ViewBag.Error = Errors.CrawlerError;
+                return View();
             }
 
             UpdateAverageRequestTime();
@@ -76,6 +62,63 @@ namespace PerformanceEvaluatingApp.Controllers
 
             ViewBag.CrawledWebsite = _website;
             return View(_sitePages);
+        }
+
+        bool ValidateAndSetUrl(string address, bool? startFromCurrentLocation)
+        {
+            if (Uri.TryCreate(address, UriKind.Absolute, out _url) && (_url.Scheme == Uri.UriSchemeHttp || _url.Scheme == Uri.UriSchemeHttps))
+            {
+                if (startFromCurrentLocation != true)
+                {
+                    string[] addressPieces = address.Split(new string[] { "://", "/" }, StringSplitOptions.RemoveEmptyEntries);
+                    address = addressPieces[0] + "://" + addressPieces[1];
+                    _url = new Uri(address);
+                }
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        void SetOrCreateWebsite()
+        {
+            _website = _websitesContext.Websites.Where(w => w.Name == _url.AbsoluteUri).SingleOrDefault();
+            if (_website == null)
+                _website = new Website
+                {
+                    Name = _url.AbsoluteUri
+                };
+        }
+
+        async Task<bool> CrawlAsync()
+        {
+            _sitePages = new List<WebPage>();
+            var result = await _crawler.CrawlAsync(_url);
+            return !result.ErrorOccurred;
+        }
+
+        public async Task<ActionResult> AjaxIndex(string address = null, bool startFromCurrentLocation = false)
+        {
+            if (!ValidateAndSetUrl(address, startFromCurrentLocation))
+            {
+                ViewBag.Error = Errors.BadUrlGiven;
+                return PartialView("WebPagesTable");
+            }
+
+            SetOrCreateWebsite();
+
+            if (!(await CrawlAsync()))
+            {
+                ViewBag.Error = Errors.CrawlerError;
+                return PartialView("WebPagesTable");
+            }
+
+            UpdateAverageRequestTime();
+            UpdateDatabase();
+
+            return PartialView("WebPagesTable", _sitePages);
         }
 
         public ActionResult History(string id)

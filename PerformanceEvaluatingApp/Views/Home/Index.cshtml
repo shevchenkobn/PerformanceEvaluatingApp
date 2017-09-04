@@ -3,7 +3,7 @@
     ViewBag.Title = "Home Page";
 }
 
-<form method="post" action="/Home/Index">
+<form method="post" action="/Home/Index" id="testSite">
     <div class="form-group">
         <label for="address">Website's URL:</label>
         <input class="form-control" type="url" id="address "name="address" />
@@ -37,7 +37,27 @@
 }
 else
 {
-    <div class="alert alert-info text-center">
-        <strong>To test site performance fill in the form above</strong>
+    <div id="output">
+        <div class="alert alert-info text-center">
+            <strong>To test site performance fill in the form above</strong>
+        </div>
     </div>
+}
+@section scripts {
+    <script>
+        var loadingGif = '<div class="jumbotron text-success">\
+            <h2>Please, wait until will be tested</h2> \
+            <p>This may take several minutes depending on site complexity and site\'s server speed</p> \
+            </div>\
+            <div><img alt="Loading..." src="/Content/Images/loading.gif" /></div>';
+        var form = $("#testSite");
+        var output = $("#output");
+        form.submit(function (event) {
+            output.html(loadingGif);
+            $.post("/Home/AjaxIndex", form.serialize()).done(function (data) {
+                output.html(data);
+            });
+            event.preventDefault();
+        });
+    </script>
 }
