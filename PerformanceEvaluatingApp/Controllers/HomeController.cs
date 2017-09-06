@@ -12,6 +12,7 @@ using Abot.Crawler;
 using System.Data.Entity;
 using Abot.Poco;
 using System.Net;
+using Newtonsoft.Json;
 
 namespace PerformanceEvaluatingApp.Controllers
 {
@@ -99,26 +100,27 @@ namespace PerformanceEvaluatingApp.Controllers
             return !result.ErrorOccurred;
         }
 
-        public async Task<ActionResult> AjaxIndex(string address = null, bool startFromCurrentLocation = false)
+        public async Task<ActionResult> IndexJson(string address = null, bool startFromCurrentLocation = false)
         {
             if (!ValidateAndSetUrl(address, startFromCurrentLocation))
             {
-                ViewBag.Error = Errors.BadUrlGiven;
-                return PartialView("WebPagesTable");
+                return Json(new { error = "badUrl" });
             }
 
             SetOrCreateWebsite();
 
             if (!(await CrawlAsync()))
             {
-                ViewBag.Error = Errors.CrawlerError;
-                return PartialView("WebPagesTable");
+                return Json(new { error = "crawlerError" });
             }
 
             UpdateAverageRequestTime();
             UpdateDatabase();
 
-            return PartialView("WebPagesTable", _sitePages);
+            var website = JsonConvert.SerializeObject(_website);
+            var results = JsonConvert.SerializeObject(_sitePages);
+
+            return Json(new { website = website, results = results });
         }
 
         public ActionResult History(string id)

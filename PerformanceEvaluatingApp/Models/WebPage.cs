@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Web;
+using Newtonsoft.Json;
 
 namespace PerformanceEvaluatingApp.Models
 {
@@ -13,6 +14,7 @@ namespace PerformanceEvaluatingApp.Models
         public DateTime Timestamp { get; set; }
 
         public int? WebsiteId { get; set; }
+        [JsonIgnore]
         public Website Website { get; set; }
 
         public WebPage()

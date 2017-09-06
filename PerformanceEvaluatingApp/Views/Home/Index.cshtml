@@ -3,7 +3,7 @@
     ViewBag.Title = "Home Page";
 }
 
-<form method="post" action="/Home/Index" id="testSite">
+<form method="post" action="/Home/IndexJson" id="testSite">
     <div class="form-group">
         <label for="address">Website's URL:</label>
         <input class="form-control" type="url" id="address "name="address" />
@@ -29,35 +29,146 @@
         </div>
     </div>
 </form>
-@if (Model != null)
-{
-    <h2 class="text-info">Requests results for website <a href="@ViewBag.CrawledWebsite.Name" target="_blank">@ViewBag.CrawledWebsite.Name</a></h2>
-    { Html.RenderPartial("WebPagesTable", Model); }
-    <div class="well">To see all results for @Html.ActionLink(" the website", "History", "Home", new { id = (int) ViewBag.CrawledWebsite.Id }, null)</div>
-}
-else
-{
-    <div id="output">
-        <div class="alert alert-info text-center">
-            <strong>To test site performance fill in the form above</strong>
-        </div>
-    </div>
-}
+
+<div id="output">
+    @{ Html.RenderPartial("TestsResults", Model);}
+</div>
 @section scripts {
     <script>
-        var loadingGif = '<div class="jumbotron text-success">\
-            <h2>Please, wait until will be tested</h2> \
-            <p>This may take several minutes depending on site complexity and site\'s server speed</p> \
+        String.prototype.replaceAll = function (search, replacement) {
+            var target = this;
+            return target.split(search).join(replacement);
+        };
+        var controller = "Home", action = "IndexJson";
+        var columnNames = {
+            "Request Uri": "RequestUri",
+            "Request time": "RequestTime",
+            "Date and time of request": "Timestamp"
+        };
+
+        var loadingGif = '<div class="text-center">\
+            <h2 class="text-info">Please, wait until website will be tested</h2> \
+            <p class="text-success">This may take several minutes depending on site complexity and site\'s server speed</p> \
             </div>\
-            <div><img alt="Loading..." src="/Content/Images/loading.gif" /></div>';
+            <div class="img-wrap"><img class="img-responsive" alt="Loading..." src="/Content/Images/loading.gif" /></div>';
+
+        var placeholder = '%site%';
+        var resultsHeader = '<h2 class="text-info">Test results for \
+            <a href="' + placeholder + '">' + placeholder + '</a></h2>';
+        var errorNotice = '<h3 class="text-info">Errors happened while sending requests to URLs:</h3>';
+        var resultsFooter = '<div class="well">\
+            <a href="/Home/History?id=' + placeholder + '"> See results all results for the website</a>\
+            </div>';
+
         var form = $("#testSite");
         var output = $("#output");
+
         form.submit(function (event) {
             output.html(loadingGif);
-            $.post("/Home/AjaxIndex", form.serialize()).done(function (data) {
-                output.html(data);
+            $.post("/" + controller + '/' + action, form.serialize()).done(function (data) {
+                output.empty();
+                data.website = JSON.parse(data.website);
+                output.append(resultsHeader.replaceAll(placeholder, data["website"]["Name"]));
+                // here drop chart
+                output.append(constructTable(data));
+                output.append(resultsFooter.replaceAll(placeholder, data["website"]["Id"]));
+                output.fadeIn();
             });
             event.preventDefault();
         });
+
+        // json = ["website" = Website, "results" = IEnumerable<WebPage>]
+        function constructTable(json)
+        {
+            json.results = JSON.parse(json.results);
+            var wrapDiv = $("<div/>");
+            var table = $("<table/>",
+                {
+                    class: "table table-striped table-responsive table-hover"
+                }
+            );
+            var headers = $("<tr/>",
+                {
+                    class: "info"
+                }
+            );
+
+            for (var columnName in columnNames)
+            {
+                headers.append($("<th/>", { text: columnName }));
+            }
+            table.append(headers);
+
+            function sortByTimeCallback(a, b) {
+                var a = parseFloat(a["RequestTime"]);
+                var b = parseFloat(b["RequestTime"]);
+                return b - a;
+            }
+            json["results"].sort(sortByTimeCallback);
+            var firstWas = false;
+            var erroneous = [];
+            for (var i = 0; i < json["results"].length; i++)
+            {
+                if (json["results"][i]["RequestTime"] == 0)
+                {
+                    erroneous.push(json["results"][i]);
+                    continue;
+                }
+                var row = $("<tr/>");
+                if (!firstWas)
+                {
+                    row.attr("class", "danger");
+                    firstWas = true;
+                }
+                for (var columnName in columnNames)
+                {
+                    var prop = columnNames[columnName];
+                    row.append($("<td/>", { text: json["results"][i][prop] }));
+                }
+                table.append(row);
+            }
+            console.log(table.find("tr").last());
+            debugger;
+            table.find("tr").last().attr("class", "success");
+            wrapDiv.append(table);
+
+            if (erroneous.length > 0)
+            {
+                wrapDiv.append(errorNotice);
+
+                table = $("<table/>",
+                    {
+                        class: "table table-responsive table-hover"
+                    }
+                );
+                headers = $("<tr/>",
+                    {
+                        class: "warning"
+                    }
+                );
+
+                for (var columnName in columnNames) {
+                    if (columnNames[columnName] !== "RequestTime")
+                        headers.append($("<th/>", { text: columnName }));
+                }
+                table.append(headers);
+                for (var i = 0; i < erroneous.length; i++) {
+                    var row = $("<tr/>",
+                        {
+                            class: "warning"
+                        }
+                    );
+                    for (var columnName in columnNames) {
+                        var prop = columnNames[columnName];
+                        if (prop != "RequestTime")
+                            row.append($("<td/>", { text: erroneous[i][prop] }));
+                    }
+                    table.append(row);
+                }
+                wrapDiv.append(table);
+            }
+
+            return wrapDiv;
+        }
     </script>
 }

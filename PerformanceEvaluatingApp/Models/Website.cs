@@ -4,6 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Web;
+using Newtonsoft.Json;
 
 namespace PerformanceEvaluatingApp.Models
 {
@@ -16,6 +17,7 @@ namespace PerformanceEvaluatingApp.Models
         public string Name { get; set; }
         public double AverageRequestTime { get; set; }
         public int Tries { get; set; }
+        [JsonIgnore]
         public ICollection<WebPage> WebPages { get; set; }
 
         public Website()

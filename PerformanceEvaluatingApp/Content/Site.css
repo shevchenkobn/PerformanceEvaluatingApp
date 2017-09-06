@@ -39,6 +39,14 @@ button[type="submit"] {
     margin: auto;
 }
 
+.img-wrap .img-responsive {
+    margin: 0 auto;
+}
+
+.navbar-brand > img.logo-part {
+    display: inline;
+}
+
 /*Fancy checkbox*/
 .form-group input[type="checkbox"] {
     display: none;
