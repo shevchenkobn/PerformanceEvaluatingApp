@@ -2,9 +2,6 @@
 @model IEnumerable<PerformanceEvaluatingApp.Models.WebPage>
 @if (Model != null)
 {
-
-    //chart
-
     if (ViewBag.Error == Errors.NoErrors || ViewBag.Error == null)
     {
         var erroneous = Model.Where(w => w.RequestTime == 0).ToArray();

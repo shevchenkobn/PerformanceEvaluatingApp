@@ -41,7 +41,7 @@
         };
         var controller = "Home", action = "IndexJson";
         var columnNames = {
-            "Request Uri": "RequestUri",
+            "Request Url": "RequestUri",
             "Request time": "RequestTime",
             "Date and time of request": "Timestamp"
         };
@@ -55,23 +55,42 @@
         var placeholder = '%site%';
         var resultsHeader = '<h2 class="text-info">Test results for \
             <a href="' + placeholder + '">' + placeholder + '</a></h2>';
+        var ajaxRequestError = `<div class="alert alert-danger text-center">\
+            <strong>${placeholder}</strong>\
+            </div>`;
         var errorNotice = '<h3 class="text-info">Errors happened while sending requests to URLs:</h3>';
         var resultsFooter = '<div class="well">\
-            <a href="/Home/History?id=' + placeholder + '"> See results all results for the website</a>\
+            <a href="/Home/History?id=' + placeholder + '"> See all results for the website</a>\
             </div>';
+        var errors = {
+            "badUrl": "The specified URL is in bad format.",
+            "crawlerError": "Error occuried while processing your request.</br>\
+                        Please, try again."
+        };
 
         var form = $("#testSite");
         var output = $("#output");
 
         form.submit(function (event) {
             output.html(loadingGif);
-            $.post("/" + controller + '/' + action, form.serialize()).done(function (data) {
+            $.post("/" + controller + '/' + action, form.serialize()).done(function (json) {
+                if (json["error"])
+                {
+                    var message;
+                    if (errors[json["error"]])
+                        message = errors[json["error"]];
+                    else
+                        message = "Undefined error";
+                    output.html(ajaxRequestError.replaceAll(placeholder, message));
+                    return;
+                }
                 output.empty();
-                data.website = JSON.parse(data.website);
-                output.append(resultsHeader.replaceAll(placeholder, data["website"]["Name"]));
-                // here drop chart
-                output.append(constructTable(data));
-                output.append(resultsFooter.replaceAll(placeholder, data["website"]["Id"]));
+                json.website = JSON.parse(json.website);
+                json.results = JSON.parse(json.results);
+                output.append(resultsHeader.replaceAll(placeholder, json["website"]["Name"]));
+                output.append(createChart(json));
+                output.append(constructTable(json));
+                output.append(resultsFooter.replaceAll(placeholder, json["website"]["Id"]));
                 output.fadeIn();
             });
             event.preventDefault();
@@ -80,7 +99,6 @@
         // json = ["website" = Website, "results" = IEnumerable<WebPage>]
         function constructTable(json)
         {
-            json.results = JSON.parse(json.results);
             var wrapDiv = $("<div/>");
             var table = $("<table/>",
                 {
@@ -104,6 +122,29 @@
                 var b = parseFloat(b["RequestTime"]);
                 return b - a;
             }
+            function toAppropriateString(columnNames, columnName) {
+                function toString(value, length = 2)
+                {
+                    value = value.toString();
+                    var offset = "";
+                    for (var i = 0; i < length - value.length; i++)
+                    {
+                        offset += "0";
+                    }
+                    return offset + value;
+                }
+                switch (columnName) {
+                    case "Timestamp":
+                        var date = new Date(columnNames[columnName]);
+                        return `${date.getFullYear()}-${toString(date.getMonth() + 1)}-${toString(date.getDate())} ${toString(date.getHours())}:${toString(date.getMinutes())}:${toString(date.getDate())}`;
+
+                    case "RequestTime":
+                        return columnNames[columnName].toFixed(4);
+
+                    default:
+                        return columnNames[columnName];
+                }
+            }
             json["results"].sort(sortByTimeCallback);
             var firstWas = false;
             var erroneous = [];
@@ -123,12 +164,10 @@
                 for (var columnName in columnNames)
                 {
                     var prop = columnNames[columnName];
-                    row.append($("<td/>", { text: json["results"][i][prop] }));
+                    row.append($("<td/>", { text: toAppropriateString(json["results"][i], prop) }));
                 }
                 table.append(row);
             }
-            console.log(table.find("tr").last());
-            debugger;
             table.find("tr").last().attr("class", "success");
             wrapDiv.append(table);
 
@@ -161,13 +200,60 @@
                     for (var columnName in columnNames) {
                         var prop = columnNames[columnName];
                         if (prop != "RequestTime")
-                            row.append($("<td/>", { text: erroneous[i][prop] }));
+                            row.append($("<td/>", { text: toAppropriateString(erroneous[i], prop) }));
                     }
                     table.append(row);
                 }
                 wrapDiv.append(table);
             }
 
+            return wrapDiv;
+        }
+        function createChart(json)
+        {
+            var wrapDiv = $("<div/>", { id: "chartWrap" });
+            var canvas = $("<canvas/>", { id: "chart" });
+            console.log(canvas);
+            wrapDiv.append(canvas);
+
+            var requestsTime = [];
+            var urls = [];
+            for (var i = 0; i < json.results.length; i++)
+            {
+                requestsTime.push(json.results[i].RequestTime);
+                urls.push(json.results[i].RequestUri);
+            }
+            new Chart(canvas, {
+                type: 'line',
+                data: {
+                    datasets: [{
+                        label: 'Webpage performance',
+                        data: requestsTime,
+                        "fill": true,
+                        "borderColor": "rgb(75, 192, 192)",
+                        "backgroundColor": "rgba(75, 192, 192, 0.5)",
+                        "lineTension": 0.1
+                    }],
+                    labels: urls
+                },
+                options: {
+                    scales: {
+                        xAxes: [{
+                            ticks: {
+                                autoSkip: false,
+                                maxRotation: 60,
+                                minRotation: 12
+                            }
+                        }],
+                        yAxes: [{
+                            scaleLabel: {
+                                display: true,
+                                labelString: 'Request Time'
+                            }
+                        }]
+                    }
+                }
+            });
             return wrapDiv;
         }
     </script>
