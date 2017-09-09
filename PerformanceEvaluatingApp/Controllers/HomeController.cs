@@ -42,9 +42,9 @@ namespace PerformanceEvaluatingApp.Controllers
             return View();
         }
         [HttpPost,ActionName("Index")]
-        public async Task<ActionResult> IndexPost(string address, bool? startFromCurrentLocation)
+        public async Task<ActionResult> IndexPost(string address, bool? useHostnameOnly)
         {
-            if (!ValidateAndSetUrl(address, startFromCurrentLocation))
+            if (!ValidateAndSetUrl(address, useHostnameOnly))
             {
                 ViewBag.Error = Errors.BadUrlGiven;
                 return View();
@@ -65,11 +65,11 @@ namespace PerformanceEvaluatingApp.Controllers
             return View(_sitePages);
         }
 
-        bool ValidateAndSetUrl(string address, bool? startFromCurrentLocation)
+        bool ValidateAndSetUrl(string address, bool? useHostnameOnly)
         {
             if (Uri.TryCreate(address, UriKind.Absolute, out _url) && (_url.Scheme == Uri.UriSchemeHttp || _url.Scheme == Uri.UriSchemeHttps))
             {
-                if (startFromCurrentLocation != true)
+                if (useHostnameOnly == true)
                 {
                     string[] addressPieces = address.Split(new string[] { "://", "/" }, StringSplitOptions.RemoveEmptyEntries);
                     address = addressPieces[0] + "://" + addressPieces[1];
@@ -100,9 +100,9 @@ namespace PerformanceEvaluatingApp.Controllers
             return !result.ErrorOccurred;
         }
 
-        public async Task<ActionResult> IndexJson(string address = null, bool startFromCurrentLocation = false)
+        public async Task<ActionResult> IndexJson(string address, bool? useHostnameOnly)
         {
-            if (!ValidateAndSetUrl(address, startFromCurrentLocation))
+            if (!ValidateAndSetUrl(address, useHostnameOnly))
             {
                 return Json(new { error = "badUrl" });
             }

@@ -5,21 +5,20 @@
 
 <form method="post" action="/Home/IndexJson" id="testSite">
     <div class="form-group">
-        <label for="address">Website's URL:</label>
+        <label for="address">Website's URL <small>(include <i>http://</i> or <i>https://</i>)</small>:</label>
         <input class="form-control" type="url" id="address "name="address" />
     </div>
     <div class="row">
         <div class="col-xs-9 col-md-3 col-sm-4">
             <div class="form-group">
-                <input type="checkbox" name="startFromCurrentLocation" value="true" id="fancy-checkbox-default" autocomplete="on" />
-                @*<input type="hidden" name="startFromCurrentLocation" value="false" />*@
+                <input type="checkbox" name="useHostnameOnly" value="true" id="fancy-checkbox-default" autocomplete="on" />
                 <div class="btn-group">
                     <label for="fancy-checkbox-default" class="btn btn-default">
                         <span class="glyphicon glyphicon-ok"></span>
                         <span> </span>
                     </label>
                     <label for="fancy-checkbox-default" class="btn btn-default active">
-                        Do not truncate URL
+                        Use hostname only
                     </label>
                 </div>
             </div>
