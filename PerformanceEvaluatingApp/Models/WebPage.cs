@@ -13,9 +13,9 @@ namespace PerformanceEvaluatingApp.Models
         public double RequestTime { get; set; }
         public DateTime Timestamp { get; set; }
 
-        public int? WebsiteId { get; set; }
+        public int? TestId { get; set; }
         [JsonIgnore]
-        public Website Website { get; set; }
+        public Test Test { get; set; }
 
         public WebPage()
         {

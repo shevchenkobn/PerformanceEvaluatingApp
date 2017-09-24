@@ -15,14 +15,12 @@ namespace PerformanceEvaluatingApp.Models
         [Index(IsUnique = true)]
         [MaxLength(450)]
         public string Name { get; set; }
-        public double AverageRequestTime { get; set; }
-        public int Tries { get; set; }
         [JsonIgnore]
-        public ICollection<WebPage> WebPages { get; set; }
+        public ICollection<Test> WebPages { get; set; }
 
         public Website()
         {
-            WebPages = new List<WebPage>();
+            WebPages = new List<Test>();
         }
     }
 }
