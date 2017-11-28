@@ -8,8 +8,15 @@ namespace PerformanceEvaluatingApp.Models
 {
     public class WebsitesContext : DbContext
     {
-        public DbSet<WebPage> WebPages { get; set; }
+        static WebsitesContext()
+        {
+            Database.SetInitializer<DbContext>(new DbInitializer());
+        }
         public DbSet<Website> Websites { get; set; }
+        public DbSet<Test> Tests { get; set; }
+        public DbSet<IpAddressInfo> IpAddressInfos { get; set; }
+        public DbSet<WebPage> WebPages { get; set; }
+        public DbSet<HttpStatusCode> HttpStatusCodes { get; set; }
         public WebsitesContext()
         {
             Configuration.LazyLoadingEnabled = true;

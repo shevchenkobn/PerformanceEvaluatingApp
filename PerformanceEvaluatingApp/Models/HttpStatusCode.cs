@@ -14,5 +14,16 @@ namespace PerformanceEvaluatingApp.Models
         [Key]
         public int Code { get; set; }
         public string Phrase { get; set; }
+
+        public HttpStatusCode()
+        {
+            
+        }
+
+        public HttpStatusCode(int code, string phrase)
+        {
+            Code = code;
+            Phrase = phrase;
+        }
     }
 }
