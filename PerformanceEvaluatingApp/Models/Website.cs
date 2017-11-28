@@ -16,11 +16,13 @@ namespace PerformanceEvaluatingApp.Models
         [MaxLength(450)]
         public string Name { get; set; }
         [JsonIgnore]
-        public ICollection<Test> WebPages { get; set; }
+        public ICollection<Test> Tests { get; set; }
+        [JsonIgnore]
+        public ICollection<WebPage> WebPages { get; set; }
 
         public Website()
         {
-            WebPages = new List<Test>();
+            Tests = new List<Test>();
         }
     }
 }

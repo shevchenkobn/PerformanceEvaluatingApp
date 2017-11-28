@@ -133,7 +133,7 @@ namespace PerformanceEvaluatingApp.Controllers
     //        int idInt;
     //        if (string.IsNullOrEmpty(id) || !int.TryParse(id, out idInt))
     //            return View("ListWebsites", _websitesContext.Websites);
-    //        Website website = _websitesContext.Websites.Include(w => w.WebPages).Where(w => w.Id == idInt).FirstOrDefault();
+    //        Website website = _websitesContext.Websites.Include(w => w.Tests).Where(w => w.Id == idInt).FirstOrDefault();
     //        if (website != null)
     //        {
     //            return View("ListSitePages", website);
@@ -186,7 +186,7 @@ namespace PerformanceEvaluatingApp.Controllers
     //        _websitesContext.Entry(_website).State = _website.Id == 0 ?
     //                                    EntityState.Added :
     //                                    EntityState.Modified;
-    //        _websitesContext.WebPages.AddRange(_sitePages as IEnumerable<WebPage>);
+    //        _websitesContext.Tests.AddRange(_sitePages as IEnumerable<WebPage>);
     //        _websitesContext.SaveChanges();
     //    }
     //    void UpdateAverageRequestTime()
