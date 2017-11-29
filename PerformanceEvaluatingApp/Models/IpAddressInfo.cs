@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Web;
 using Newtonsoft.Json;
@@ -11,6 +12,7 @@ namespace PerformanceEvaluatingApp.Models
     {
         [Key]
         [JsonIgnore]
+        [ForeignKey("Test")]
         public int Id { get; set; }
         public string IpAddress { get; set; }
         public string CountryCode { get; set; }
@@ -24,6 +26,6 @@ namespace PerformanceEvaluatingApp.Models
         public double? Longitude { get; set; }
         public int? MetroCode { get; set; }
         [JsonIgnore]
-        public Test Test { get; set; }
+        public virtual Test Test { get; set; }
     }
 }

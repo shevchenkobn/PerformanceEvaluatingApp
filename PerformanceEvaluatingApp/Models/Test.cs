@@ -12,7 +12,6 @@ namespace PerformanceEvaluatingApp.Models
     public class Test
     {
         [Key]
-        [ForeignKey("IpAddressInfo")]
         public int Id { get; set; }
         //[JsonIgnore]
         //public int RequestIpId { get; set; }
@@ -24,9 +23,10 @@ namespace PerformanceEvaluatingApp.Models
         public double AverageRequestTime { get; set; }
         public int WebPagesCount { get; set; }
         [JsonIgnore]
-        public Website Website { get; set; }
-        public IpAddressInfo IpAddressInfo { get; set; }
-        public ICollection<WebPage> WebPages { get; set; }
+        public virtual Website Website { get; set; }
+        public virtual IpAddressInfo IpAddressInfo { get; set; }
+        [JsonIgnore]
+        public virtual ICollection<WebPage> WebPages { get; set; }
         public Test()
         {
             WebPages = new List<WebPage>();

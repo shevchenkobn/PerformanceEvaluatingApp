@@ -19,7 +19,7 @@ namespace PerformanceEvaluatingApp.Models
         public DbSet<HttpStatusCode> HttpStatusCodes { get; set; }
         public WebsitesContext()
         {
-            Configuration.LazyLoadingEnabled = false;
+            
         }
     }
 }

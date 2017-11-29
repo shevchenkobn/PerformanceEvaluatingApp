@@ -37,9 +37,12 @@ namespace PerformanceEvaluatingApp.Controllers
 
         // GET: websites/
         [Route("")]
-        public string GetWebsites()
+        public HttpResponseMessage GetWebsites()
         {
-            return JsonConvert.SerializeObject(_dbContext.Websites);
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(JsonConvert.SerializeObject(_dbContext.Websites))
+            };
         }
 
         // GET: websites/5
@@ -100,16 +103,22 @@ namespace PerformanceEvaluatingApp.Controllers
 
         // GET: websites/tests
         [Route("tests/")]
-        public string GetTests()
+        public HttpResponseMessage GetTests()
         {
-            return JsonConvert.SerializeObject(_dbContext.Tests);
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(
+                    JsonConvert.SerializeObject(_dbContext.Tests.Include("IpAddressInfo"))
+                )
+            };
         }
 
         // POST: websites/
         [HttpPost]
         [Route("")]
-        public async Task<HttpResponseMessage> TestWebsite([FromBody]string urlString)
+        public async Task<HttpResponseMessage> TestWebsite()
         {
+            var urlString = await Request.Content.ReadAsStringAsync();
             if (!SaveSetWebsite(urlString))
             {
                 return new HttpResponseMessage(HttpStatusCode.BadRequest)
@@ -146,6 +155,10 @@ namespace PerformanceEvaluatingApp.Controllers
             };
         }
 
+        #region privateMethodsForPOST
+
+        
+
         private bool SaveSetWebsite(string urlString)
         {
             if (!(Uri.TryCreate(urlString, UriKind.Absolute, out _url) &&
@@ -175,7 +188,6 @@ namespace PerformanceEvaluatingApp.Controllers
                 }
                 _ipInfo = new IpAddressInfo
                 {
-                    // TODO: make a breakpoint here and fill ipinfo with values
                     IpAddress = jObject["ip"].ToString(),
                     CountryCode = jObject["country_code"].ToString(),
                     CountryName = jObject["country_name"].ToString(),
@@ -239,15 +251,20 @@ namespace PerformanceEvaluatingApp.Controllers
                 {
                     var crawledPage = args.CrawledPage;
                     webPage.RequestTime = crawledPage.Elapsed;
-                    webPage.RequestCode = (int) crawledPage.HttpWebResponse.StatusCode; // otherwise search for code in table
+                    webPage.HttpStatusCode = _dbContext.HttpStatusCodes.SingleOrDefault(
+                        c => c.Code == (int)crawledPage.HttpWebResponse.StatusCode
+                    );// otherwise search for code in table
                     _webPages.Add(webPage);
                 }
             };
-            if (!(await crawler.CrawlAsync(_url)).ErrorOccurred)
+            if ((await crawler.CrawlAsync(_url)).ErrorOccurred)
             {
                 return false;
             }
             _test.Timestamp = _webPages[0].Timestamp;
+            _test.AverageRequestTime = _webPages.Average(p => p.RequestTime);
+            _test.WebPagesCount = _webPages.Count;
+            _test.WebPages = _webPages;
             return true;
         }
 
@@ -255,10 +272,15 @@ namespace PerformanceEvaluatingApp.Controllers
         {
             try
             {
+                int count = 0;
                 _dbContext.Entry(_website).State = _website.Id == 0 ? EntityState.Added : EntityState.Modified;
-                _dbContext.Tests.Add(_test);
-                _dbContext.IpAddressInfos.Add(_ipInfo);
-                _dbContext.WebPages.AddRange(_webPages);
+                _dbContext.Entry(_ipInfo).State = EntityState.Added;
+                //_dbContext.IpAddressInfos.Add(_ipInfo);
+                //count += await _dbContext.SaveChangesAsync();
+                //_dbContext.Tests.Add(_test);
+                //count += await _dbContext.SaveChangesAsync();
+                //_dbContext.WebPages.AddRange(_webPages);
+                //count += await _dbContext.SaveChangesAsync();
                 if (await _dbContext.SaveChangesAsync() == 0)
                 {
                     return false;
@@ -271,7 +293,7 @@ namespace PerformanceEvaluatingApp.Controllers
                 }
                 return true;
             }
-            catch
+            catch (Exception e)
             {
                 return false;
             }
@@ -282,22 +304,19 @@ namespace PerformanceEvaluatingApp.Controllers
             var inputKey = _website.Id + "/" + _test.Id;
             return BCrypt.Net.BCrypt.HashPassword(inputKey, 4);
         }
+        #endregion
 
-        [Route("{testHash}")]
-        public async Task<HttpResponseMessage> DeleteTest(string testHash)
+        [Route("")]
+        public async Task<HttpResponseMessage> DeleteTest()
         {
+            var testHash = await Request.Content.ReadAsStringAsync();
             _test = _dbContext.Tests.FirstOrDefault(t => t.TestHash == testHash);
             if (_test == null)
             {
                 return new HttpResponseMessage(HttpStatusCode.NotFound);
             }
-            _dbContext.Entry(_test).State = EntityState.Deleted;
             var json = new JObject();
-            if (_dbContext.Tests.Count(t => t.WebsiteId == _test.WebsiteId) == 1)
-            {
-                _dbContext.Entry(_test.Website).State = EntityState.Deleted;
-            }
-            else
+            if (DeleteOnlyTest())
             {
                 json.Add("WebsiteId", _test.WebsiteId);
             }
@@ -313,6 +332,23 @@ namespace PerformanceEvaluatingApp.Controllers
             {
                 Content = new StringContent(json.ToString())
             };
+        }
+
+        private bool DeleteOnlyTest()
+        {
+            _website = _test.Website;
+            _dbContext.Entry(_test.IpAddressInfo).State = EntityState.Deleted;
+            foreach (var webPage in _dbContext.WebPages.Where(p => p.TestId == _test.Id))
+            {
+                _dbContext.Entry(webPage).State = EntityState.Deleted;
+            }
+            _dbContext.Entry(_test).State = EntityState.Deleted;
+            if (_dbContext.Tests.Count(t => t.WebsiteId == _website.Id) == 1)
+            {
+                _dbContext.Entry(_website).State = EntityState.Deleted;
+                return false;
+            }
+            return true;
         }
 
         protected override void Dispose(bool disposing)

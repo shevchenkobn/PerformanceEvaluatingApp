@@ -16,7 +16,7 @@ namespace PerformanceEvaluatingApp.Models
         [MaxLength(450)]
         public string Name { get; set; }
         [JsonIgnore]
-        public ICollection<Test> Tests { get; set; }
+        public virtual ICollection<Test> Tests { get; set; }
         //[JsonIgnore]
         //public ICollection<WebPage> WebPages { get; set; }
 

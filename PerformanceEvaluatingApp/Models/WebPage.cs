@@ -27,6 +27,6 @@ namespace PerformanceEvaluatingApp.Models
         public Test Test { get; set; }
         //[JsonIgnore]
         //public Website Website { get; set; }
-        public HttpStatusCode HttpStatusCode { get; set; }
+        public virtual HttpStatusCode HttpStatusCode { get; set; }
     }
 }

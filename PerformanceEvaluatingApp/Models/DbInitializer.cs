@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Data.Entity;
 using System.Linq;
 using System.Web;
@@ -62,7 +63,7 @@ namespace PerformanceEvaluatingApp.Models
                 new HttpStatusCode(428, "Precondition Required"),
                 new HttpStatusCode(429, "Too Many Requests"),
                 new HttpStatusCode(431, "Request Header Fields Too Large"),
-                new HttpStatusCode(451, "Unavailable For Legal Reasons"),
+                new HttpStatusCode(451, "Unavailable For Legal Reasons / Redirect (Internet Information Services)"),
 
                 new HttpStatusCode(500, "Internal Server Error"),
                 new HttpStatusCode(501, "Not Implemented"),
@@ -76,25 +77,21 @@ namespace PerformanceEvaluatingApp.Models
                 new HttpStatusCode(510, "Not Extended"),
                 new HttpStatusCode(511, "Network Authentification Required"),
                 // Not standart
-                new HttpStatusCode(103, "Checkpoint"),
-                new HttpStatusCode(103, "Early Hints"),
-                new HttpStatusCode(420, "Method Failure (Spring Framework)"),
-                new HttpStatusCode(420, "Enhance Your Calm (Twitter)"),
+                new HttpStatusCode(103, "Checkpoint/Early Hints"),
+                new HttpStatusCode(420, "Method Failure (Spring Framework) / Enhance Your Calm (Twitter)"),
                 new HttpStatusCode(450, "Blocked by Windows Parental Controls (Microsoft)"),
                 new HttpStatusCode(498, "Invalid Token (Esri)"),
-                new HttpStatusCode(499, "Token Required (Esri)"),
+                new HttpStatusCode(499, "Token Required (Esri) / Client Closed Request (nginx)"),
                 new HttpStatusCode(530, "Site is frozen (Pantheon)"),
                 new HttpStatusCode(598, "(Informal convention) Network read timeout error"),
                 // IIS
                 new HttpStatusCode(440, "Login Time-out (Internet Information Services)"),
                 new HttpStatusCode(449, "Retry With (Internet Information Services)"),
-                new HttpStatusCode(451, "Redirect (Internet Information Services)"),
                 // nginx
                 new HttpStatusCode(444, "No Response (nginx)"),
                 new HttpStatusCode(495, "SSL Certificate Error (nginx)"),
                 new HttpStatusCode(496, "SSL Certificate Required (nginx)"),
                 new HttpStatusCode(497, "HTTP Request Sent to HTTPS Port (nginx)"),
-                new HttpStatusCode(499, "Client Closed Request (nginx)"),
                 // Cloudflare
                 new HttpStatusCode(520, "Unknown Error (Cloudflare)"),
                 new HttpStatusCode(521, "Web Server Is Down (Cloudflare)"),
@@ -106,7 +103,10 @@ namespace PerformanceEvaluatingApp.Models
                 new HttpStatusCode(527, "Railgun Error (Cloudflare)")
             };
             context.HttpStatusCodes.AddRange(codes);
-            context.SaveChanges();
+            if (context.SaveChanges() == 0)
+            {
+                throw new DataException("Didn't add anything from http codes");
+            }
         }
     }
 }
