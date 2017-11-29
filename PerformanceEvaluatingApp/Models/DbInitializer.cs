@@ -106,6 +106,7 @@ namespace PerformanceEvaluatingApp.Models
                 new HttpStatusCode(527, "Railgun Error (Cloudflare)")
             };
             context.HttpStatusCodes.AddRange(codes);
+            context.SaveChanges();
         }
     }
 }

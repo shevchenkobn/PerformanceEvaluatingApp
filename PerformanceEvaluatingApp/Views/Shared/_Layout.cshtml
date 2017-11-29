@@ -17,12 +17,12 @@
                     <span class="icon-bar"></span>
                 </button>
                 @*@Html.ActionLink("Application name", "Index", "Home", new { area = "" }, new { @class = "navbar-brand" })*@
-                <a href="@Url.Action("Index", "Home")" class="navbar-brand"><img src="~/Content/Images/speedometer_logo.gif" class="logo-part" width="32" height="32" alt="Performance Evaluation"/> Performance Evaluation</a>
+                <a href="@Url.Action("Index", "Main")" class="navbar-brand"><img src="~/Content/Images/speedometer_logo.gif" class="logo-part" width="32" height="32" alt="Performance Evaluation"/> Performance Evaluation</a>
             </div>
             <div class="navbar-collapse collapse">
                 <ul class="nav navbar-nav">
-                    <li>@Html.ActionLink("Home", "Index", "Home")</li>
-                    <li>@Html.ActionLink("List of tested sites", "History", "Home")</li>
+                    <li>@Html.ActionLink("Home", "Index", "Main")</li>
+                    <li>@Html.ActionLink("List of tested sites", "History", "Main")</li>
                 </ul>
             </div>
         </div>

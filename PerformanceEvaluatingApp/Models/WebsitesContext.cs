@@ -10,7 +10,7 @@ namespace PerformanceEvaluatingApp.Models
     {
         static WebsitesContext()
         {
-            Database.SetInitializer<DbContext>(new DbInitializer());
+            Database.SetInitializer(new DbInitializer());
         }
         public DbSet<Website> Websites { get; set; }
         public DbSet<Test> Tests { get; set; }
@@ -19,7 +19,7 @@ namespace PerformanceEvaluatingApp.Models
         public DbSet<HttpStatusCode> HttpStatusCodes { get; set; }
         public WebsitesContext()
         {
-            Configuration.LazyLoadingEnabled = true;
+            Configuration.LazyLoadingEnabled = false;
         }
     }
 }

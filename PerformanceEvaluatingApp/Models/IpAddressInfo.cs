@@ -19,9 +19,9 @@ namespace PerformanceEvaluatingApp.Models
         public string RegionName { get; set; }
         public string City { get; set; }
         public string ZipCode { get; set; }
-        public string Timezone { get; set; }
+        public string TimeZone { get; set; }
         public double? Latitude { get; set; }
-        public double? Longtitude { get; set; }
+        public double? Longitude { get; set; }
         public int? MetroCode { get; set; }
         [JsonIgnore]
         public Test Test { get; set; }

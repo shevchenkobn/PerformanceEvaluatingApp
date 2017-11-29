@@ -16,7 +16,7 @@ namespace PerformanceEvaluatingApp
             routes.MapRoute(
                 name: "Default",
                 url: "{controller}/{action}/{address}",
-                defaults: new { controller = "Home", action = "Index", address = UrlParameter.Optional }
+                defaults: new { controller = "Main", action = "Index", address = UrlParameter.Optional }
             );
         }
     }

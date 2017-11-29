@@ -17,8 +17,8 @@ namespace PerformanceEvaluatingApp.Models
         public string Name { get; set; }
         [JsonIgnore]
         public ICollection<Test> Tests { get; set; }
-        [JsonIgnore]
-        public ICollection<WebPage> WebPages { get; set; }
+        //[JsonIgnore]
+        //public ICollection<WebPage> WebPages { get; set; }
 
         public Website()
         {

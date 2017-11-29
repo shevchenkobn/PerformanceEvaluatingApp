@@ -20,7 +20,7 @@ namespace PerformanceEvaluatingApp.Controllers
     {
         NoErrors, BadUrlGiven, NoTestedWebsites, WebsiteIsNotTested, CrawlerError
     }
-    public class HomeController : Controller
+    public class MainController : Controller
     {
         WebsitesContext _websitesContext = new WebsitesContext();
         CrawlerX _crawler;
@@ -29,12 +29,16 @@ namespace PerformanceEvaluatingApp.Controllers
 
         Uri _url;
         
-        public HomeController()
+        public MainController()
         {
             _crawler = new CrawlerX();
             //_crawler.PageCrawlCompletedAsync += SaveWebsiteUriRequestResult;
             //_crawler.PageCrawlDisallowedAsync += SaveWebsiteUriRequestResult;
             //_crawler.PageLinksCrawlDisallowedAsync += SaveWebsiteUriRequestResult;
+        }
+
+        public void Index(string id)
+        {
         }
     //    [HttpGet]
     //    public ActionResult Index(string address)
