@@ -1,0 +1,266 @@
+﻿@model IEnumerable<PerformanceEvaluatingApp.Models.WebPage>
+@{
+    ViewBag.Title = "Home Page";
+}
+
+<form method="post" action="/Home/IndexJson" id="testSite">
+    <div class="form-group">
+        <label for="address">Website's URL <small>(include <i>http://</i> or <i>https://</i>)</small>:</label>
+        <input class="form-control" type="url" id="address "name="address" />
+    </div>
+    <div class="row">
+        <div class="col-xs-9 col-md-3 col-sm-4">
+            <div class="form-group">
+                <input type="checkbox" name="useHostnameOnly" value="true" id="fancy-checkbox-default" autocomplete="on" />
+                <div class="btn-group">
+                    <label for="fancy-checkbox-default" class="btn btn-default">
+                        <span class="glyphicon glyphicon-ok"></span>
+                        <span> </span>
+                    </label>
+                    <label for="fancy-checkbox-default" class="btn btn-default active">
+                        Use hostname only
+                    </label>
+                </div>
+            </div>
+        </div>
+        <div class="col-xs-3 col-md-9 col-sm-8">
+            <button class="btn btn-block btn-group btn-info" type="submit">Test</button>
+        </div>
+    </div>
+</form>
+
+<div id="output">
+    @{ Html.RenderPartial("TestsResults", Model);}
+</div>
+@section scripts {
+    <script>
+        String.prototype.replaceAll = function (search, replacement) {
+            var target = this;
+            return target.split(search).join(replacement);
+        };
+        var controller = "Home", action = "IndexJson";
+        var columnNames = {
+            "Request Url": "RequestUri",
+            "Request time": "RequestTime",
+            "Date and time of request": "Timestamp"
+        };
+
+        var loadingGif = '<div class="text-center">\
+            <h2 class="text-info">Please, wait until website will be tested</h2> \
+            <p class="text-success">This may take several minutes depending on site complexity and site\'s server speed</p> \
+            </div>\
+            <div class="img-wrap"><img class="img-responsive" alt="Loading..." src="/Content/Images/loading.gif" /></div>';
+
+        var placeholder = '%site%';
+        var resultsHeader = '<h2 class="text-info">Test results for \
+            <a href="' + placeholder + '" target="_blank">' + placeholder + '</a></h2>';
+        var ajaxRequestError = `<div class="alert alert-danger text-center">\
+            <strong>${placeholder}</strong>\
+            </div>`;
+        var errorNotice = '<h3 class="text-info">Errors happened while sending requests to URLs:</h3>';
+        var resultsFooter = '<div class="well">\
+            <a href="/Home/History?id=' + placeholder + '"> See all results for the website</a>\
+            </div>';
+        var errors = {
+            "badUrl": "The specified URL is in bad format.",
+            "crawlerError": "Error occuried while processing your request.</br>\
+                        Please, try again."
+        };
+
+        var form = $("#testSite");
+        var output = $("#output");
+
+        form.submit(function (event) {
+            output.html(loadingGif);
+            $.post("/" + controller + '/' + action, form.serialize()).done(function (json) {
+                if (json["error"])
+                {
+                    var message;
+                    if (errors[json["error"]])
+                        message = errors[json["error"]];
+                    else
+                        message = "Undefined error";
+                    output.html(ajaxRequestError.replaceAll(placeholder, message));
+                    return;
+                }
+                output.empty();
+                json.website = JSON.parse(json.website);
+                json.results = JSON.parse(json.results);
+                output.append(resultsHeader.replaceAll(placeholder, json["website"]["Name"]));
+                output.append(createChart(json));
+                output.append(constructTable(json));
+                output.append(resultsFooter.replaceAll(placeholder, json["website"]["Id"]));
+                output.fadeIn();
+            });
+            event.preventDefault();
+        });
+
+        // json = ["website" = Website, "results" = IEnumerable<WebPage>]
+        function constructTable(json)
+        {
+            var wrapDiv = $("<div/>");
+            var table = $("<table/>",
+                {
+                    class: "table table-striped table-responsive table-hover"
+                }
+            );
+            var headers = $("<tr/>",
+                {
+                    class: "info"
+                }
+            );
+
+            for (var columnName in columnNames)
+            {
+                headers.append($("<th/>", { text: columnName }));
+            }
+            table.append(headers);
+
+            function sortByTimeCallback(a, b) {
+                var a = parseFloat(a["RequestTime"]);
+                var b = parseFloat(b["RequestTime"]);
+                return b - a;
+            }
+            function toAppropriateString(columnNames, columnName) {
+                function toString(value, length = 2)
+                {
+                    value = value.toString();
+                    var offset = "";
+                    for (var i = 0; i < length - value.length; i++)
+                    {
+                        offset += "0";
+                    }
+                    return offset + value;
+                }
+                switch (columnName) {
+                    case "Timestamp":
+                        var date = new Date(columnNames[columnName]);
+                        return `${date.getFullYear()}-${toString(date.getMonth() + 1)}-${toString(date.getDate())} ${toString(date.getHours())}:${toString(date.getMinutes())}:${toString(date.getDate())}`;
+
+                    case "RequestTime":
+                        return columnNames[columnName].toFixed(4);
+
+                    default:
+                        return columnNames[columnName];
+                }
+            }
+            json["results"].sort(sortByTimeCallback);
+            var firstWas = false;
+            var erroneous = [];
+            for (var i = 0; i < json["results"].length; i++)
+            {
+                if (json["results"][i]["RequestTime"] == 0)
+                {
+                    erroneous.push(json["results"][i]);
+                    continue;
+                }
+                var row = $("<tr/>");
+                if (!firstWas)
+                {
+                    row.attr("class", "danger");
+                    firstWas = true;
+                }
+                for (var columnName in columnNames)
+                {
+                    var prop = columnNames[columnName];
+                    row.append($("<td/>", { text: toAppropriateString(json["results"][i], prop) }));
+                }
+                table.append(row);
+            }
+            table.find("tr").last().attr("class", "success");
+            wrapDiv.append(table);
+
+            if (erroneous.length > 0)
+            {
+                wrapDiv.append(errorNotice);
+
+                table = $("<table/>",
+                    {
+                        class: "table table-responsive table-hover"
+                    }
+                );
+                headers = $("<tr/>",
+                    {
+                        class: "warning"
+                    }
+                );
+
+                for (var columnName in columnNames) {
+                    if (columnNames[columnName] !== "RequestTime")
+                        headers.append($("<th/>", { text: columnName }));
+                }
+                table.append(headers);
+                for (var i = 0; i < erroneous.length; i++) {
+                    var row = $("<tr/>",
+                        {
+                            class: "warning"
+                        }
+                    );
+                    for (var columnName in columnNames) {
+                        var prop = columnNames[columnName];
+                        if (prop != "RequestTime")
+                            row.append($("<td/>", { text: toAppropriateString(erroneous[i], prop) }));
+                    }
+                    table.append(row);
+                }
+                wrapDiv.append(table);
+            }
+
+            return wrapDiv;
+        }
+        function createChart(json)
+        {
+            var wrapDiv = $("<div/>", { id: "chartWrap" });
+            var canvas = $("<canvas/>", { id: "chart" });
+            console.log(canvas);
+            wrapDiv.append(canvas);
+
+            var requestsTime = [];
+            var urls = [];
+            for (var i = 0; i < json.results.length; i++)
+            {
+                requestsTime.push(json.results[i].RequestTime);
+                urls.push(json.results[i].RequestUri);
+            }
+            new Chart(canvas, {
+                type: 'line',
+                data: {
+                    datasets: [{
+                        label: 'Webpage performance',
+                        data: requestsTime,
+                        "fill": true,
+                        "borderColor": "rgb(75, 192, 192)",
+                        "backgroundColor": "rgba(75, 192, 192, 0.5)",
+                        "lineTension": 0.1
+                    }],
+                    labels: urls
+                },
+                options: {
+                    scales: {
+                        xAxes: [{
+                            ticks: {
+                                autoSkip: true,
+                                maxRotation: 60,
+                                minRotation: 12
+                            }
+                        }],
+                        yAxes: [{
+                            scaleLabel: {
+                                display: true,
+                                labelString: 'Request Time'
+                            }
+                        }]
+                    },
+                    animation: {
+                        duration: 0,
+                    },
+                    hover: {
+                        animationDuration: 0,
+                    },
+                    responsiveAnimationDuration: 0
+                }
+            });
+            return wrapDiv;
+        }
+    </script>
+}

@@ -149,6 +149,7 @@ namespace PerformanceEvaluatingApp.Controllers
             }
             var json = JObject.FromObject(_test);
             json.Add("TestHash", _test.TestHash);
+            json.Add("Website", JToken.FromObject(_test.Website));
             return new HttpResponseMessage(HttpStatusCode.OK)
             {
                 Content = new StringContent(json.ToString())
