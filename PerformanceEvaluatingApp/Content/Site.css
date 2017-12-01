@@ -18,3 +18,12 @@ table *, .layout {
 .hint {
     color: #05f;
 }
+.button {
+    cursor: pointer;
+    padding: 0.7rem;
+    border: 1px solid #0055ff;
+    border-radius: 25%;
+}
+.button:hover {
+    background-color: #d3d3d3;
+}

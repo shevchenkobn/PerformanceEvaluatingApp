@@ -56,7 +56,7 @@
                     ng-click="getWebpages($event)">See details</button>
             <button ng-click="deleteTest($event)">Delete this test</button>
             <h3 ng-bind="hints.webPages"></h3>
-            <div ng-show="result.webPages">
+            @*<div ng-show="result.webPages">
                 <div class="layout">
                     <input type="text" ng-model ="filter.query" placeholder ="Type here for quick search" />
                     <div class="layout">
@@ -95,10 +95,27 @@
                     </tr>
                 </table>
                 <h3 ng-show="!filter.collection.length">No Results</h3>
-            </div>
+            </div>*@
         </div>
+        <web-pages src="{{result.webPages}}"></web-pages>
     </div>
     <div ng-show="currentView === views.STAT">
-
+        <h3 ng-show="website" ng-bind="website.Name"></h3>
+        <h2 ng-show="hints.stat" class="hint">{{hints.stat}}</h2>
+        <button ng-show="failure" ng-click="retryUpdate($event)">Retry</button>
+        <div class="layout" ng-show="collection && displaying === displayingEnum.WEBSITES">
+            <input ng-model="websiteQuery" placeholder="Quick search"/>
+            <ul>
+                <li ng-click="getTests($event, website)" ng-repeat="website in collection | filter:websiteQuery">{{website.Name}}</li>
+            </ul>
+        </div>
+        <div class="layout" ng-show="collection && displaying === displayingEnum.TESTS">
+            @*<div class="layout">
+                Filter by ip info
+            </div>*@
+            <ul>
+                <li ng-click="getTests($event, website)" ng-repeat="website in collection | filter:websiteQuery">{{website.Name}}</li>
+            </ul>
+        </div>
     </div>
 </div>
