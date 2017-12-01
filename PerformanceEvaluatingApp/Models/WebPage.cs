@@ -17,7 +17,7 @@ namespace PerformanceEvaluatingApp.Models
         //public int WebsiteId { get; set; }
         [JsonIgnore]
         [ForeignKey("HttpStatusCode")]
-        public int RequestCode { get; set; }
+        public int? RequestCode { get; set; }
 
         public string RequestUri { get; set; }
         public double RequestTime { get; set; }

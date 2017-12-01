@@ -33,6 +33,7 @@ namespace PerformanceEvaluatingApp.Controllers
         private Test _test;
         private Website _website;
         private List<WebPage> _webPages;
+        private HttpCodeModel[] _cachedCodes;
 
 
         // GET: websites/
@@ -149,7 +150,7 @@ namespace PerformanceEvaluatingApp.Controllers
             }
             var json = JObject.FromObject(_test);
             json.Add("TestHash", _test.TestHash);
-            json.Add("Website", JToken.FromObject(_test.Website));
+            json.Add("WebsiteName", JToken.FromObject(_test.Website.Name));
             return new HttpResponseMessage(HttpStatusCode.OK)
             {
                 Content = new StringContent(json.ToString())
@@ -227,6 +228,7 @@ namespace PerformanceEvaluatingApp.Controllers
                 IpAddressInfo = _ipInfo
             };
             _webPages = new List<WebPage>();
+            _cachedCodes = _dbContext.HttpStatusCodes.ToArray();
             WebPage webPage = null;
             crawler.PageCrawlStartingAsync += (sender, args) =>
             {
@@ -252,9 +254,10 @@ namespace PerformanceEvaluatingApp.Controllers
                 {
                     var crawledPage = args.CrawledPage;
                     webPage.RequestTime = crawledPage.Elapsed;
-                    webPage.HttpStatusCode = _dbContext.HttpStatusCodes.SingleOrDefault(
+                    webPage.HttpStatusCode = _cachedCodes.SingleOrDefault(
                         c => c.Code == (int)crawledPage.HttpWebResponse.StatusCode
                     );// otherwise search for code in table
+                    webPage.Test = _test;
                     _webPages.Add(webPage);
                 }
             };
@@ -265,7 +268,6 @@ namespace PerformanceEvaluatingApp.Controllers
             _test.Timestamp = _webPages[0].Timestamp;
             _test.AverageRequestTime = _webPages.Average(p => p.RequestTime);
             _test.WebPagesCount = _webPages.Count;
-            _test.WebPages = _webPages;
             return true;
         }
 
@@ -275,14 +277,14 @@ namespace PerformanceEvaluatingApp.Controllers
             {
                 int count = 0;
                 _dbContext.Entry(_website).State = _website.Id == 0 ? EntityState.Added : EntityState.Modified;
-                _dbContext.Entry(_ipInfo).State = EntityState.Added;
+                _dbContext.Tests.Add(_test);
                 //_dbContext.IpAddressInfos.Add(_ipInfo);
                 //count += await _dbContext.SaveChangesAsync();
-                //_dbContext.Tests.Add(_test);
+                _dbContext.Entry(_ipInfo).State = EntityState.Added;
                 //count += await _dbContext.SaveChangesAsync();
-                //_dbContext.WebPages.AddRange(_webPages);
-                //count += await _dbContext.SaveChangesAsync();
-                if (await _dbContext.SaveChangesAsync() == 0)
+                _dbContext.WebPages.AddRange(_webPages);
+                count += await _dbContext.SaveChangesAsync();
+                if (count == 0)
                 {
                     return false;
                 }
