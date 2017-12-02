@@ -94,6 +94,7 @@ module.directive('test', ["$location", function ($location) {
         }
         return function (test) {
             if (!test) {
+                $scope.test = null;
                 return;
             }
             if (typeof test === 'string') {
@@ -278,6 +279,10 @@ module.directive('webPages', ["$location", function ($location) {
         }
 
         return function (webPages) {
+            if (!webPages) {
+                $scope.webPages = null;
+                return;
+            }
             if (typeof webPages === 'string') {
                 try {
                     webPages = JSON.parse(webPages);
@@ -515,7 +520,7 @@ module.controller('MainController',
             function processResponse(response) {
                 if (~~(response.status / 100) === 2) {
                     $scope.stat.test = test;
-                    stat.tests = $scope.collection;
+                    stat.tests = $scope.stat.collection;
                     $scope.collection = null;
                     $scope.stat.webPages = response.data.WebPages;
                     $scope.displaying = $scope.displayingEnum.WEBPAGES;
@@ -551,4 +556,17 @@ module.controller('MainController',
                     break;
             }
         };
+        $scope.goBack = function (event) {
+            event.preventDefault();
+            if ($scope.displaying === $scope.displayingEnum.TESTS) {
+                $scope.stat.collection = stat.websites;
+                $scope.stat.website = null;
+                $scope.displaying = $scope.displayingEnum.WEBSITES;
+            } else if ($scope.displaying === $scope.displayingEnum.WEBPAGES) {
+                $scope.stat.test = '';
+                $scope.stat.collection = stat.tests;
+                $scope.stat.webPages = '';
+                $scope.displaying = $scope.displayingEnum.TESTS;
+            }
+        }
     });

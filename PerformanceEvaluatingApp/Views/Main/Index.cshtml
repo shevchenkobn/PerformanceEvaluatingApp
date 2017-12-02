@@ -27,10 +27,11 @@
         <web-pages src="{{result.webPages}}"></web-pages>
     </div>
     <div ng-show="currentView === views.STAT">
+        <button ng-click="goBack($event)" ng-show="stat.website"><<<</button>
         <h3 id="statWebsite" ng-show="stat.website && !stat.test" ng-bind="stat.website.Name"></h3>
         <test id="statTest" src="{{stat.test}}"></test>
         <h2 ng-show="hints.stat" class="hint">{{hints.stat}}</h2>
-        <button ng-show="stat.webPages || stat.collection" ng-click="download($event, views.STAT)">Download</button>
+        <button ng-show="stat.website" ng-click="download($event, views.STAT)">Download</button>
         <button ng-show="stat.failure" ng-click="retryUpdate($event)">Retry</button>
         <div class="layout" ng-if="stat.collection && displaying === displayingEnum.WEBSITES">
             <input ng-model="websiteQuery" placeholder="Quick search"/>
