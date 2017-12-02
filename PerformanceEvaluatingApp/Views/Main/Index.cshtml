@@ -18,104 +18,52 @@
         </form>
         <h2 class="hint" ng-bind="hints.test"></h2>
         <div ng-show="result.test">
-            <table>
-                <tr>
-                    <th>Url</th><td>{{result.test.WebsiteName}}</td>
-                </tr>
-                <tr>
-                    <th>Server IP</th>
-                    <td>{{result.test.IpAddressInfo.IpAddress}}</td>
-                </tr>
-                <tr>
-                    <th>Country</th>
-                    <td>{{result.test.IpAddressInfo.CountryName}}</td>
-                </tr>
-                <tr>
-                    <th>Coordinates</th>
-                    <td>Latitude: {{result.test.IpAddressInfo.Latitude}};
-                        Longitude: {{result.test.IpAddressInfo.Longitude}}</td>
-                </tr>
-                <tr>
-                    <th>Time Zone</th>
-                    <td>{{result.test.IpAddressInfo.TimeZone}}</td>
-                </tr>
-                <tr>
-                    <th>Pages Tested</th>
-                    <td>{{result.test.WebPagesCount}}</td>
-                </tr>
-                <tr>
-                    <th>Test Started</th>
-                    <td>{{result.test.Timestamp.toString()}}</td>
-                </tr>
-                <tr>
-                    <th>Average Request Time</th>
-                    <td>{{result.test.AverageRequestTime}}</td>
-                </tr>
-            </table>
+            <test src="{{result.test}}"></test>
             <button ng-show="result.test && !result.webPages"
                     ng-click="getWebpages($event)">See details</button>
             <button ng-click="deleteTest($event)">Delete this test</button>
             <h3 ng-bind="hints.webPages"></h3>
-            @*<div ng-show="result.webPages">
-                <div class="layout">
-                    <input type="text" ng-model ="filter.query" placeholder ="Type here for quick search" />
-                    <div class="layout">
-                        <label ng-repeat="code in filter.codes">
-                            {{getHttpStatus(code)}}
-                            <input type="checkbox" ng-model="code.selected"/>
-                        </label>
-                    </div>
-                    <br/>
-                    <div class="layout">
-                        Request Length between 
-                        <input step="50" type="number" ng-model="filter.time.min"/>
-                        and 
-                        <input step="50" type="number" ng-model="filter.time.max"/><br/>
-                        <button ng-click="filter.time.restoreTime($event)">Defaults</button>
-                    </div>
-                    <label>Has error <input type="checkbox" ng-model="filter.error.no"/></label>
-                    <label>Without error <input type="checkbox" ng-model="filter.error.yes"/></label>
-                </div>
-                <div ng-show="sort.order.length">Sorted by: {{sort.order.join(', ')}}</div>
-                <table id="output">
-                    <tr>
-                        <th ng-repeat="header in websiteHeaders">
-                            {{header.value}}
-                            <button ng-click="sort($event, header, -1)">v</button>
-                            <button ng-click="sort($event, header, 1)">^</button>
-                            <button ng-click="sort($event, header, 0)">x</button>
-                        </th>
-                    </tr>
-                    <tr ng-show="([webPage] | filter:filter.query).length > 0" ng-repeat="webPage in filter.collection = (result.webPages | filter : filter.byCodes | filter : filter.byTime | filter : filter.byErrors | orderBy : sort.criteria)">
-                        <td>{{webPage.RequestUri}}</td>
-                        <td>{{webPage.HttpStatusCode ? getHttpStatus(webPage.HttpStatusCode) : ''}}</td>
-                        <td>{{webPage.RequestTime}}</td>
-                        <td>{{webPage.Timestamp.toString()}}</td>
-                        <td>{{webPage.Error}}</td>
-                    </tr>
-                </table>
-                <h3 ng-show="!filter.collection.length">No Results</h3>
-            </div>*@
         </div>
         <web-pages src="{{result.webPages}}"></web-pages>
     </div>
     <div ng-show="currentView === views.STAT">
-        <h3 ng-show="website" ng-bind="website.Name"></h3>
+        <h3 ng-show="stat.website && !stat.test" ng-bind="stat.website.Name"></h3>
+        <test src="{{stat.test}}"></test>
         <h2 ng-show="hints.stat" class="hint">{{hints.stat}}</h2>
-        <button ng-show="failure" ng-click="retryUpdate($event)">Retry</button>
-        <div class="layout" ng-show="collection && displaying === displayingEnum.WEBSITES">
+        <button ng-show="stat.failure" ng-click="retryUpdate($event)">Retry</button>
+        <div class="layout" ng-if="stat.collection && displaying === displayingEnum.WEBSITES">
             <input ng-model="websiteQuery" placeholder="Quick search"/>
-            <ul>
-                <li ng-click="getTests($event, website)" ng-repeat="website in collection | filter:websiteQuery">{{website.Name}}</li>
-            </ul>
+            <table>
+                <tr ng-click="getTests($event, website)" ng-repeat="website in stat.displaySites = (stat.collection | filter:websiteQuery)">
+                    <td class="button">{{website.Name}}</td>
+                    <td class="button" ng-click="getAllWebpages($event, website); $event.stopPropagation();">See all Web Pages</td>
+                </tr>
+            </table>
+            <h3 ng-show="!stat.displaySites.length > 0">No results</h3>
         </div>
-        <div class="layout" ng-show="collection && displaying === displayingEnum.TESTS">
+        <div class="layout" ng-if="stat.collection && displaying === displayingEnum.TESTS">
             @*<div class="layout">
-                Filter by ip info
+                Filter by ip info, average, count, date
             </div>*@
-            <ul>
-                <li ng-click="getTests($event, website)" ng-repeat="website in collection | filter:websiteQuery">{{website.Name}}</li>
-            </ul>
+            <table>
+                <tr>
+                    <th ng-repeat="header in testHeaders">
+                        {{header.value}}
+                        <span ng-if="header.prop">
+                            <!--sort buttons-->
+                        </span>
+                    </th>
+                </tr>
+                <tr class="button" ng-click="getTestWebPages($event, test)" ng-repeat="test in stat.collection">
+                    <td>{{test.Timestamp.toString()}}</td>
+                    <td>{{test.AverageRequestTime}}</td>
+                    <td>{{test.WebPagesCount}}</td>
+                    <td>{{test.IpAddressInfo.IpAddress}}
+                        <button label="See details" ng-click="expandIp($event, test); $event.stopPropagation();"></button>
+                    </td>
+                </tr>
+            </table>
         </div>
+        <web-pages src="{{stat.webPages}}"></web-pages>
     </div>
 </div>

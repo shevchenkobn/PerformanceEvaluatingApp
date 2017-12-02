@@ -56,8 +56,16 @@ namespace PerformanceEvaluatingApp.Controllers
                 return new HttpResponseMessage(HttpStatusCode.NotFound);
             }
             var response = Request.CreateResponse(HttpStatusCode.OK);
+            var jTests = new JArray();
+            var tests = _dbContext.Tests.Where(t => t.Website.Id == _website.Id).ToArray();
+            for (var i = 0; i < tests.Length; i++)
+            {
+                var jTest = JObject.FromObject(tests[i]);
+                jTest.Add("WebsiteName", tests[i].Website.Name);
+                jTests.Add(jTest);
+            }
             var json = JObject.FromObject(_website);
-            json.Add("Tests", JToken.FromObject(_website.Tests));
+            json.Add("Tests", jTests);
             response.Content = new StringContent(json.ToString());
 
             return response;
@@ -97,6 +105,7 @@ namespace PerformanceEvaluatingApp.Controllers
             var response = Request.CreateResponse(HttpStatusCode.OK);
             var json = JObject.FromObject(_test);
             json.Add("WebPages", JToken.FromObject(_test.WebPages));
+            json.Add("WebsiteName", _test.Website.Name);
             response.Content = new StringContent(json.ToString());
 
             return response;

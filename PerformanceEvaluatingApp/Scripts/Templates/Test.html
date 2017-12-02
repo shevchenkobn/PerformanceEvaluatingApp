@@ -1,0 +1,21 @@
+﻿<table ng-if="test">
+    <tr>
+        <th>Url</th><td>{{test.WebsiteName}}</td>
+    </tr>
+    <tr>
+        <th>Pages Tested</th>
+        <td>{{test.WebPagesCount}}</td>
+    </tr>
+    <tr>
+        <th>Test Started</th>
+        <td>{{test.Timestamp.toString()}}</td>
+    </tr>
+    <tr>
+        <th>Average Request Time</th>
+        <td>{{test.AverageRequestTime}}</td>
+    </tr>
+    <tr ng-repeat="(prop, value) in ipInfo">
+        <th>{{prop}}</th>
+        <td>{{value}}</td>
+    </tr>
+</table>

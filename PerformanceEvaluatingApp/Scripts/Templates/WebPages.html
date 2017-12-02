@@ -1,27 +1,31 @@
 ﻿<div ng-show="webPages">
     <div class="layout">
-        <input type="text" ng-model="filter.query" placeholder="Type here for quick search" />
+        <form>
+            <input type="text" ng-model="filter.query" placeholder="Type here for quick search"/>
+        </form>
         <div class="layout">
             <label ng-repeat="code in filter.codes">
                 {{getHttpStatus(code)}}
-                <input type="checkbox" ng-model="code.selected" />
+                <input type="checkbox" ng-model="code.selected"/>
             </label>
         </div>
-        <br />
-        <div class="layout">
-            Request Length between
-            <input step="50" type="number" ng-model="filter.time.min" />
-            and
-            <input step="50" type="number" ng-model="filter.time.max" /><br />
-            <button ng-click="filter.restoreTime($event)">Defaults</button>
-        </div>
-        <label>Has error <input type="checkbox" ng-model="filter.error.no" /></label>
-        <label>Without error <input type="checkbox" ng-model="filter.error.yes" /></label>
+        <br/>
+        <form>
+            <div class="layout">
+                Request Length between
+                <input step="50" type="number" ng-model="filter.time.min"/>
+                and
+                <input step="50" type="number" ng-model="filter.time.max"/><br/>
+                <button ng-click="filter.restoreTime($event)">Defaults</button>
+            </div>
+            <label>Has error <input type="checkbox" ng-model="filter.error.no"/></label>
+            <label>Without error <input type="checkbox" ng-model="filter.error.yes"/></label>
+        </form>
     </div>
     <div ng-show="sort.order.length">Sorted by: {{sort.order.join(', ')}}</div>
     <table id="output">
         <tr>
-            <th ng-repeat="header in websiteHeaders">
+            <th ng-repeat="header in webPageHeaders">
                 {{header.value}}
                 <button ng-click="sort($event, header, -1)">v</button>
                 <button ng-click="sort($event, header, 1)">^</button>
@@ -36,5 +40,5 @@
             <td>{{webPage.Error}}</td>
         </tr>
     </table>
-    <h3 ng-show="!filter.collection.length">No Results</h3>
+    <h3 ng-if="!filter.collection.length">No Results</h3>
 </div>

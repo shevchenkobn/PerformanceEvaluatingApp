@@ -22,6 +22,97 @@
 }
 
 var module = angular.module('Main', []);
+module.directive('test', ["$location", function ($location) {
+    var directive = {
+        restrict: 'E',
+        scope: {},
+    };
+    var port = $location.port();
+    directive.templateUrl = $location.protocol() +
+        "://" +
+        $location.host() +
+        (port ? ':' + port : '') +
+        '/Scripts/Templates/Test.html';
+    function controller($scope) {
+        var dictionary = {
+            IpAddress: 'Ip Address',
+            CountryCode: 'Country Code',
+            CountryName: 'Country Name',
+            RegionName: 'Region Name',
+            RegionCode: 'Region Code',
+            City: 'City',
+            ZipCode: 'Zip Code',
+            TimeZone: 'Time Zone',
+            MetroCode: 'Metro Code'
+        };
+        var coordinates = (function() {
+            var coords = {};
+            function add(prop, value) {
+                if (typeof value === 'number') {
+                    coords[prop] = value;
+                }
+            }
+
+            var string = '';
+            add.toString = function() {
+                if (!string) {
+                    var first = true;
+                    for (var prop in coords) {
+                        if (!coords.hasOwnProperty(prop)) {
+                            continue;
+                        }
+                        if (!first) {
+                            string += ', ';
+                        } else {
+                            first = !first;
+                        }
+                        string += prop + ': ' + coords[prop];
+                    }
+                }
+                return string;
+            }
+            return add;
+        })();
+        $scope.ipInfo = [];
+        function prepareForDisplay(test) {
+            test.Timestamp = new Date(test.Timestamp);
+            $scope.ipInfo = {};
+            for (var prop in test.IpAddressInfo) {
+                if (!test.IpAddressInfo.hasOwnProperty(prop)) {
+                    continue;
+                }
+                if (dictionary[prop] === undefined) {
+                    coordinates(prop, test.IpAddressInfo[prop]);
+                } else if (test.IpAddressInfo[prop]) {
+                    $scope.ipInfo[dictionary[prop]] = test.IpAddressInfo[prop];
+                }
+            }
+            var coords = coordinates.toString();
+            if (coords) {
+                $scope.ipInfo.Coordinates = coords;
+            }
+        }
+        return function (test) {
+            if (!test) {
+                return;
+            }
+            if (typeof test === 'string') {
+                try {
+                    test = JSON.parse(test);
+                } catch (e) {
+                    return;
+                }
+            }
+            $scope.test = test;
+            prepareForDisplay($scope.test);
+        };
+    }
+
+    directive.link = function($scope, elem, attrs) {
+        attrs.$observe('src', controller($scope));
+    };
+    return directive;
+}]);
 module.directive('webPages', ["$location", function ($location) {
     var directive = {
         restrict: 'E',
@@ -34,7 +125,7 @@ module.directive('webPages', ["$location", function ($location) {
         (port ? ':' + port : '') +
         '/Scripts/Templates/WebPages.html';
     function controller($scope) {
-        $scope.websiteHeaders = [
+        $scope.webPageHeaders = [
             {
                 prop: 'RequestUri',
                 value: 'Requested Uri'
@@ -59,7 +150,7 @@ module.directive('webPages', ["$location", function ($location) {
         $scope.getHttpStatus = function (obj) {
             return obj.Code + ' ' + obj.Phrase;
         };
-        $scope.sort = function(event, object, direction) {
+        $scope.sort = function (event, object, direction) {
             event.preventDefault();
             var matchedI;
             for (var i = 0; i < $scope.sort.criteria.length; i++) {
@@ -86,22 +177,22 @@ module.directive('webPages', ["$location", function ($location) {
                 return;
             }
             switch (direction) {
-            case -1:
-                if (matchedI === 0) {
-                    $scope.sort.criteria[i] = '-' + object.prop;
-                    $scope.sort.order[i] = object.value + desc;
-                }
-                break;
-            case 0:
-                $scope.sort.criteria.splice(i, 1);
-                $scope.sort.order.splice(i, 1);
-                break;
-            case 1:
-                if (matchedI === 1) {
-                    $scope.sort.criteria[i] = object.prop;
-                    $scope.sort.order[i] = object.value + asc;
-                }
-                break;
+                case -1:
+                    if (matchedI === 0) {
+                        $scope.sort.criteria[i] = '-' + object.prop;
+                        $scope.sort.order[i] = object.value + desc;
+                    }
+                    break;
+                case 0:
+                    $scope.sort.criteria.splice(i, 1);
+                    $scope.sort.order.splice(i, 1);
+                    break;
+                case 1:
+                    if (matchedI === 1) {
+                        $scope.sort.criteria[i] = object.prop;
+                        $scope.sort.order[i] = object.value + asc;
+                    }
+                    break;
             }
         };
         $scope.sort.criteria = [];
@@ -109,9 +200,9 @@ module.directive('webPages', ["$location", function ($location) {
         //// filter
         $scope.filter = {
             codes: [],
-            byCodes: function(webPage) {
+            byCodes: function (webPage) {
                 return !webPage.HttpStatusCode ||
-                    $scope.filter.codes.findIndex(function(el) {
+                    $scope.filter.codes.findIndex(function (el) {
                         return el.selected && el.Code === webPage.HttpStatusCode.Code;
                     }) >=
                     0;
@@ -120,7 +211,7 @@ module.directive('webPages', ["$location", function ($location) {
                 min: Number.MAX_VALUE,
                 max: Number.MIN_VALUE
             },
-            byTime: function(webPage) {
+            byTime: function (webPage) {
                 if ($scope.filter.time.max < $scope.filter.time.min) {
                     var t = $scope.filter.time.min;
                     $scope.filter.time.min = $scope.filter.time.max;
@@ -129,7 +220,7 @@ module.directive('webPages', ["$location", function ($location) {
                 return webPage.RequestTime >= $scope.filter.time.min &&
                     webPage.RequestTime <= $scope.filter.time.max;
             },
-            restoreTime: function(event) {
+            restoreTime: function (event) {
                 event.preventDefault();
                 $scope.filter.time.min = $scope.filter.time.default[0];
                 $scope.filter.time.max = $scope.filter.time.default[1];
@@ -138,7 +229,7 @@ module.directive('webPages', ["$location", function ($location) {
                 yes: true,
                 no: true
             },
-            byErrors: function(webPage) {
+            byErrors: function (webPage) {
                 return $scope.filter.error.yes && !webPage.Error || $scope.filter.error.no && webPage.Error;
             }
         };
@@ -150,15 +241,15 @@ module.directive('webPages', ["$location", function ($location) {
             $scope.filter.codes = [];
             for (var i = 0; i < webPages.length; i++) {
                 webPages[i].Timestamp = new Date(webPages[i].Timestamp);
-                if ($scope.filter.codes.findIndex(function(el) {
-                        return webPages[i].HttpStatusCode && el.Code === webPages[i].HttpStatusCode.Code;
-                    }) <
+                if ($scope.filter.codes.findIndex(function (el) {
+                    return webPages[i].HttpStatusCode && el.Code === webPages[i].HttpStatusCode.Code;
+                }) <
                     0) {
                     if (webPages[i].HttpStatusCode == null) {
                         continue;
                     }
                     var obj = angular.copy(webPages[i].HttpStatusCode);
-                    webPages[i].HttpStatusCode.toString = function() {
+                    webPages[i].HttpStatusCode.toString = function () {
                         return this.Code + ' ' + this.Phrase;
                     }
                     obj.selected = true;
@@ -188,14 +279,18 @@ module.directive('webPages', ["$location", function ($location) {
 
         return function (webPages) {
             if (typeof webPages === 'string') {
-                webPages = JSON.parse(webPages);
+                try {
+                    webPages = JSON.parse(webPages);
+                } catch (e) {
+                    return;
+                }
             }
             $scope.webPages = webPages;
             prepareForDisplay($scope.webPages);
         };
     }
 
-    directive.link = function($scope, elem, attrs) {
+    directive.link = function ($scope, elem, attrs) {
         attrs.$observe('src', controller($scope));
     };
     return directive;
@@ -297,136 +392,6 @@ module.controller('MainController',
             }
             return getApiUrl.base + string;
         }
-        //// FILTERS sorting
-        //$scope.getHttpStatus = function (obj) {
-        //    return obj.Code + ' ' + obj.Phrase;
-        //};
-        //$scope.websiteHeaders = [
-        //    {
-        //        prop: 'RequestUri',
-        //        value: 'Requested Uri'
-        //    },
-        //    {
-        //        prop: 'HttpStatusCode',
-        //        value: 'Response Code'
-        //    },
-        //    {
-        //        prop: 'RequestTime',
-        //        value: 'Request Length'
-        //    },
-        //    {
-        //        prop: 'Timestamp',
-        //        value: 'Request Start'
-        //    },
-        //    {
-        //        prop: 'Error',
-        //        value: 'Error'
-        //    }
-        //];
-        //$scope.sort = function(event, object, direction) {
-        //    event.preventDefault();
-        //    var matchedI;
-        //    for (var i = 0; i < $scope.sort.criteria.length; i++) {
-        //        if ((matchedI = $scope.sort.criteria[i].indexOf(object.prop)) >= 0) {
-        //            if (matchedI > 1 ||
-        //                matchedI === 0 && object.prop.length !== $scope.sort.criteria[i].length ||
-        //                matchedI === 1 && !(object.prop.length + 1 === $scope.sort.criteria[i].length &&
-        //                $scope.sort.criteria[i][0] === '-')) {
-        //                continue;
-        //            }
-        //            break;
-        //        }
-        //    }
-        //    var asc = ' ascending', desc = ' descending';
-        //    if (i === $scope.sort.criteria.length) {
-        //        if (direction > 0) {
-        //            $scope.sort.criteria[i] = object.prop;
-        //            $scope.sort.order[i] = object.value + asc;
-        //        } else if (direction < 0) {
-        //            $scope.sort.criteria[i] = '-' + object.prop;
-        //            $scope.sort.order[i] = object.value + desc;
-        //        }
-        //        return;
-        //    }
-        //    switch (direction) {
-        //        case -1:
-        //            if (matchedI === 0) {
-        //                $scope.sort.criteria[i] = '-' + object.prop;
-        //                $scope.sort.order[i] = object.value + desc;
-        //            }
-        //            break;
-        //        case 0:
-        //            $scope.sort.criteria.splice(i, 1);
-        //            $scope.sort.order.splice(i, 1);
-        //            break;
-        //        case 1:
-        //            if (matchedI === 1) {
-        //                $scope.sort.criteria[i] = object.prop;
-        //                $scope.sort.order[i] = object.value + asc;
-        //            }
-        //            break;
-        //    }
-        //};
-        //$scope.sort.criteria = [];
-        //$scope.sort.order = [];
-        ////// filter
-        //$scope.filter = {
-        //    codes: [],
-        //    byCodes: function (webPage) {
-        //        return !webPage.HttpStatusCode || $scope.filter.codes.findIndex(function(el) {
-        //                return el.selected && el.Code === webPage.HttpStatusCode.Code;
-        //            }) >=
-        //            0;
-        //    },
-        //    time: {
-        //        min: Number.MAX_VALUE,
-        //        max: Number.MIN_VALUE
-        //    },
-        //    byTime: function (webPage) {
-        //        if ($scope.filter.time.max < $scope.filter.time.min) {
-        //            var t = $scope.filter.time.min;
-        //            $scope.filter.time.min = $scope.filter.time.max;
-        //            $scope.filter.time.max = t;
-        //        }
-        //        return webPage.RequestTime >= $scope.filter.time.min &&
-        //            webPage.RequestTime <= $scope.filter.time.max;
-        //    },
-        //    restoreTime: function(event) {
-        //        event.preventDefault();
-        //        $scope.filter.time.min = $scope.filter.time.default[0];
-        //        $scope.filter.time.max = $scope.filter.time.default[1];
-        //    },
-        //    error: {
-        //        yes: true,
-        //        no: true
-        //    },
-        //    byErrors: function (webPage) {
-        //        return $scope.filter.error.yes && !webPage.Error || $scope.filter.error.no && webPage.Error;
-        //    }
-        //};
-        //function prepareForDisplay(webPages) {
-        //    $scope.filter.codes = [];
-        //    for (var i = 0; i < webPages.length; i++) {
-        //        webPages[i].Timestamp = new Date(webPages[i].Timestamp);
-        //        if ($scope.filter.codes.findIndex(function(el) {
-        //            return webPages[i].HttpStatusCode && el.Code === webPages[i].HttpStatusCode.Code;
-        //        }) < 0) {
-        //            var obj = angular.copy(webPages[i].HttpStatusCode);
-        //            if (obj == null) {
-        //                continue;
-        //            }
-        //            obj.selected = true;
-        //            $scope.filter.codes.push(obj);
-        //        }
-        //        if (webPages[i].RequestTime <= 0 && !webPages[i].Error) {
-        //            webPages[i].Error = 'Undefined server error';
-        //        }
-        //        $scope.filter.time.min = Math.min($scope.filter.time.min, webPages[i].RequestTime);
-        //        $scope.filter.time.max = Math.max($scope.filter.time.max, webPages[i].RequestTime);
-        //    }
-        //    $scope.filter.time.default = [$scope.filter.time.min, $scope.filter.time.max];
-        //}
-        ////
 
         function clearModel() {
             $scope.result = {};
@@ -435,27 +400,39 @@ module.controller('MainController',
         var gettingData = false;
         $scope.displayingEnum = {
             WEBSITES: 0,
-            TESTS: 1
+            TESTS: 1,
+            WEBPAGES: 2
         }
-        $scope.displaying = displayedEnum.WEBSITES;
+        $scope.displaying = $scope.displayingEnum.WEBSITES;
         $scope.$watch('currentView',
-            function (newVal) {
+            function (newVal, oldVal) {
                 if (gettingData) {
                     return;
                 }
-                if (newVal === $scope.views.STAT) {
-                    getWebsites();
-                } else if ($scope.displaying === $scope.displayedEnum.WEBSITES) {
+                if (newVal === $scope.views.STAT && $scope.displaying === $scope.displayingEnum.WEBSITES) {
+                        getWebsites();
+                } else if (oldVal === $scope.views.STAT && $scope.displaying === $scope.displayingEnum.WEBSITES) {
                     clearStatisticsView();
                 }
             });
-        var websites = [];
-        var tests = [];
-        $scope.website = null;
-        $scope.collection = null;
-        $scope.failure = false;
+        var stat = {
+            websites: null,
+            website: null,
+            tests: null,
+            test: null,
+            webPages: null
+        };
+        $scope.stat = {
+            website: null,
+            collection: null,
+            test: null,
+            webPages: null,
+            failure: false
+        };
         function clearStatisticsView() {
-            $scope.collection = undefined;
+            $scope.collection = {
+                failure: false
+            };
         }
         $scope.retryUpdate = function(event) {
             event.preventDefault();
@@ -466,37 +443,90 @@ module.controller('MainController',
                 processResponse, processResponse
             );
             gettingData = true;
-            $scope.failure = false;
+            $scope.stat.failure = false;
             $scope.hints.stat = "Updating Website List...";
             function processResponse(response) {
-                if (~~(response.code / 200) === 2) {
-                    $scope.collection = response.data;
+                if (~~(response.status / 100) === 2) {
+                    $scope.stat.collection = response.data;
                     $scope.hints.stat = "";
                 } else {
-                    $scope.failure = true;
+                    $scope.stat.failure = true;
                     $scope.hints.stat = "Failed to Update. Try again.";
                 }
                 gettingData = false;
             };
         }
+
         $scope.getTests = function(event, website) {
             event.preventDefault();
-            $scope.website = website;
-            websites = $scope.collection;
             gettingData = true;
-            $scope.hints.stat = "Retrieving data...";
+            $scope.hints.stat = "Retrieving Tests data...";
             $http.get(getApiUrl() + website.Id).then(
-                proceedResponse, proceedResponse
+                proceedResponse,
+                proceedResponse
             );
-            function proceedResponse(response) {
-                if (~~(response.code / 200) === 2) {
 
+            function proceedResponse(response) {
+                if (~~(response.status / 100) === 2) {
+                    $scope.stat.website = stat.website = website;
+                    stat.websites = $scope.stat.collection;
+                    $scope.stat.collection = response.data.Tests;
+                    for (var i = 0; i < $scope.stat.collection.length; i++) {
+                        $scope.stat.collection[i].Timestamp = new Date($scope.stat.collection[i].Timestamp);
+                    }
+                    $scope.displaying = $scope.displayingEnum.TESTS;
+                    $scope.hints.stat = '';
                 } else {
-                    $scope.hints.stat = "Failed To Retrieve";
-                    $scope.website = null;
-                    $scope.collection = websites;
+                    $scope.hints.stat = "Failed To Retrieve Tests";
                 }
                 gettingData = false;
             }
+        };
+        $scope.testHeaders = [
+            {
+                prop: 'Timestamp',
+                value: 'Started'
+            },
+            {
+                prop: 'AverageRequestTime',
+                value: 'Average Request Time'
+            },
+            {
+                prop: 'WebPagesCount',
+                value: 'Web Pages Tested'
+            },
+            {
+                value: 'Ip Address'
+            }
+        ];
+        $scope.expandIp = function(event, test) {
+            event.preventDefault();
+        };
+        $scope.statFilter = {
+
+        };
+        $scope.getTestWebPages = function(event, test) {
+            event.preventDefault();
+            $scope.hints.stat = "Retrieving Web Pages...";
+            gettingData = true;
+            $http.get(getApiUrl() + 'test/' + test.Id).then(
+                processResponse, processResponse
+            );
+            function processResponse(response) {
+                if (~~(response.status / 100) === 2) {
+                    $scope.stat.test = test;
+                    stat.tests = $scope.collection;
+                    $scope.collection = null;
+                    $scope.stat.webPages = response.data.WebPages;
+                    $scope.displaying = $scope.displayingEnum.WEBPAGES;
+                    $scope.hints.stat = '';
+                } else {
+                    $scope.hints.stat = "Failed To Retrieve Web Pages";
+                }
+                gettingData = false;
+            }
+        };
+        $scope.getAllWebPages = function(event, website) {
+            event.preventDefault();
         }
     });
