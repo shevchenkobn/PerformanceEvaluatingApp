@@ -27,13 +27,14 @@
         <web-pages src="{{result.webPages}}"></web-pages>
     </div>
     <div ng-show="currentView === views.STAT">
-        <h3 ng-show="stat.website && !stat.test" ng-bind="stat.website.Name"></h3>
-        <test src="{{stat.test}}"></test>
+        <h3 id="statWebsite" ng-show="stat.website && !stat.test" ng-bind="stat.website.Name"></h3>
+        <test id="statTest" src="{{stat.test}}"></test>
         <h2 ng-show="hints.stat" class="hint">{{hints.stat}}</h2>
+        <button ng-show="stat.webPages || stat.collection" ng-click="download($event, views.STAT)">Download</button>
         <button ng-show="stat.failure" ng-click="retryUpdate($event)">Retry</button>
         <div class="layout" ng-if="stat.collection && displaying === displayingEnum.WEBSITES">
             <input ng-model="websiteQuery" placeholder="Quick search"/>
-            <table>
+            <table id="statWebsites">
                 <tr ng-click="getTests($event, website)" ng-repeat="website in stat.displaySites = (stat.collection | filter:websiteQuery)">
                     <td class="button">{{website.Name}}</td>
                     <td class="button" ng-click="getAllWebpages($event, website); $event.stopPropagation();">See all Web Pages</td>
@@ -45,7 +46,8 @@
             @*<div class="layout">
                 Filter by ip info, average, count, date
             </div>*@
-            <table>
+
+            <table id="statTests">
                 <tr>
                     <th ng-repeat="header in testHeaders">
                         {{header.value}}
@@ -64,6 +66,6 @@
                 </tr>
             </table>
         </div>
-        <web-pages src="{{stat.webPages}}"></web-pages>
+        <web-pages id="statWebPages" src="{{stat.webPages}}"></web-pages>
     </div>
 </div>

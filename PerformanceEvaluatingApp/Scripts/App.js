@@ -529,4 +529,26 @@ module.controller('MainController',
         $scope.getAllWebPages = function(event, website) {
             event.preventDefault();
         }
+        $scope.download = function (event, view) {
+            event.preventDefault();
+            switch (view) {
+                case $scope.views.STAT:
+                    if (!$scope.stat.website && !$scope.stat.test) {
+                        return;
+                    }
+                    $scope.hints.stat = "Preparing your file...";
+                    if ($scope.stat.website && !$scope.stat.test) {
+                        var content = $('#statWebsite')[0].outerHTML +
+                            $('#statTests')[0].outerHTML;
+                    } else {
+                        var content = $('#statTest').html();
+                        if ($scope.stat.webPages) {
+                            content += '<table>' + $('#statWebPages table').html() + '</table>';
+                        }
+                    }
+                    saveAs(new Blob([content], { type: "text/plain;charset=utf-8" }), 'report.html');
+                    $scope.hints.stat = "";
+                    break;
+            }
+        };
     });
