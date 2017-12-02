@@ -58,10 +58,10 @@ namespace PerformanceEvaluatingApp.Controllers
             var response = Request.CreateResponse(HttpStatusCode.OK);
             var jTests = new JArray();
             var tests = _dbContext.Tests.Where(t => t.Website.Id == _website.Id).ToArray();
-            for (var i = 0; i < tests.Length; i++)
+            foreach (var test in tests)
             {
-                var jTest = JObject.FromObject(tests[i]);
-                jTest.Add("WebsiteName", tests[i].Website.Name);
+                var jTest = JObject.FromObject(test);
+                jTest.Add("WebsiteName", test.Website.Name);
                 jTests.Add(jTest);
             }
             var json = JObject.FromObject(_website);

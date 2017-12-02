@@ -17,6 +17,8 @@ namespace PerformanceEvaluatingApp
                 "~/Scripts/angular.js"));
             bundles.Add(new ScriptBundle("~/bundles/chart").Include(
                         "~/Scripts/Chart.min.js"));
+            bundles.Add(new ScriptBundle("~/bundles/fileSaver").Include(
+                "~/Scripts/FileSaver.min.js"));
             bundles.Add(new ScriptBundle("~/bundles/app").Include(
                 "~/Scripts/App.js"));
 
