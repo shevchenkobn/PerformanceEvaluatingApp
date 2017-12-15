@@ -241,6 +241,10 @@ namespace PerformanceEvaluatingApp.Controllers
             WebPage webPage = null;
             crawler.PageCrawlStartingAsync += (sender, args) =>
             {
+                if (args?.PageToCrawl?.Uri == null)
+                {
+                    return;
+                }
                 webPage = new WebPage
                 {
                     RequestUri = args.PageToCrawl.Uri.AbsoluteUri,
@@ -250,7 +254,7 @@ namespace PerformanceEvaluatingApp.Controllers
             };
             crawler.PageCrawlDisallowedAsync += (sender, args) =>
             {
-                if (webPage != null)
+                if (webPage != null && args != null)
                 {
                     webPage.RequestTime = -1;
                     webPage.Error = args.DisallowedReason;
@@ -259,18 +263,19 @@ namespace PerformanceEvaluatingApp.Controllers
             };
             crawler.PageCrawlCompletedAsync += (sender, args) =>
             {
-                if (webPage != null)
+                if (webPage != null && args?.CrawledPage != null)
                 {
                     var crawledPage = args.CrawledPage;
                     webPage.RequestTime = crawledPage.Elapsed;
                     webPage.HttpStatusCode = _cachedCodes.SingleOrDefault(
-                        c => c.Code == (int)crawledPage.HttpWebResponse.StatusCode
+                        c => c.Code == (crawledPage?.HttpWebResponse == null ?
+                            0 : (int)crawledPage.HttpWebResponse.StatusCode)
                     );// otherwise search for code in table
                     webPage.Test = _test;
                     _webPages.Add(webPage);
                 }
             };
-            if ((await crawler.CrawlAsync(_url)).ErrorOccurred)
+            if ((await crawler.CrawlAsync(_url)).ErrorOccurred || _webPages.Count == 0)
             {
                 return false;
             }

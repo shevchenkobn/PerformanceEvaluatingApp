@@ -14,11 +14,14 @@ namespace PerformanceEvaluatingApp
             //bundles.Add(new ScriptBundle("~/bundles/jqueryval").Include(
             //            "~/Scripts/jquery.validate*"));
             bundles.Add(new ScriptBundle("~/bundles/angular").Include(
-                "~/Scripts/angular.js"));
+                "~/Scripts/angular.js",
+                "~/Scripts/node_modules/@uirouter/angularjs/release/angular-ui-router.min.js",
+                "~/Scripts/angular-ui/ui-bootstrap.min.js",
+                "~/Scripts/angular-ui/ui-bootstrap-tpls.min.js"));
             bundles.Add(new ScriptBundle("~/bundles/chart").Include(
                         "~/Scripts/Chart.min.js"));
             bundles.Add(new ScriptBundle("~/bundles/fileSaver").Include(
-                "~/Scripts/FileSaver.min.js"));
+                "~/Scripts/node_modules/file-saver/FileSaver.min.js"));
             bundles.Add(new ScriptBundle("~/bundles/app").Include(
                 "~/Scripts/App.js"));
 
