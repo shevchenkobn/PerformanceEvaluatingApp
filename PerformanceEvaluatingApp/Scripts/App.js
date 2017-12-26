@@ -125,7 +125,8 @@ module.directive('webPages', ["$location", function ($location) {
         $location.host() +
         (port ? ':' + port : '') +
         '/Scripts/Templates/WebPages.html';
-    function controller($scope) {
+    function controller($scope, tableId) {
+        $scope.tableId = tableId;
         $scope.webPageHeaders = [
             {
                 prop: 'RequestUri',
@@ -236,10 +237,10 @@ module.directive('webPages', ["$location", function ($location) {
         };
 
         function prepareForDisplay(webPages) {
+            resetFilters();
             if (!webPages) {
-                return resetFilters();
+                return;
             }
-            $scope.filter.codes = [];
             for (var i = 0; i < webPages.length; i++) {
                 webPages[i].Timestamp = new Date(webPages[i].Timestamp);
                 if ($scope.filter.codes.findIndex(function (el) {
@@ -250,7 +251,7 @@ module.directive('webPages', ["$location", function ($location) {
                         continue;
                     }
                     var obj = angular.copy(webPages[i].HttpStatusCode);
-                    webPages[i].HttpStatusCode.toString = function () {
+                    webPages[i].HttpStatusCode.toString = function() {
                         return this.Code + ' ' + this.Phrase;
                     }
                     obj.selected = true;
@@ -296,7 +297,7 @@ module.directive('webPages', ["$location", function ($location) {
     }
 
     directive.link = function ($scope, elem, attrs) {
-        attrs.$observe('src', controller($scope));
+        attrs.$observe('src', controller($scope, attrs.tableId));
     };
     return directive;
 }]);
@@ -406,7 +407,8 @@ module.controller('MainController',
         $scope.displayingEnum = {
             WEBSITES: 0,
             TESTS: 1,
-            WEBPAGES: 2
+            WEBPAGES: 2,
+            ALL_WEBPAGES: 3
         }
         $scope.displaying = $scope.displayingEnum.WEBSITES;
         $scope.$watch('currentView',
@@ -415,7 +417,8 @@ module.controller('MainController',
                     return;
                 }
                 if (newVal === $scope.views.STAT && $scope.displaying === $scope.displayingEnum.WEBSITES) {
-                        getWebsites();
+                    clearStatisticsView();
+                    getWebsites();
                 } else if (oldVal === $scope.views.STAT && $scope.displaying === $scope.displayingEnum.WEBSITES) {
                     clearStatisticsView();
                 }
@@ -435,7 +438,11 @@ module.controller('MainController',
             failure: false
         };
         function clearStatisticsView() {
-            $scope.collection = {
+            $scope.stat = {
+                website: null,
+                collection: null,
+                test: null,
+                webPages: null,
                 failure: false
             };
         }
@@ -443,6 +450,10 @@ module.controller('MainController',
             event.preventDefault();
             getWebsites();
         }
+        $scope.updateWebsites = function() {
+            clearStatisticsView();
+            getWebsites();
+        };
         function getWebsites() {
             $http.get(getApiUrl()).then(
                 processResponse, processResponse
@@ -510,57 +521,177 @@ module.controller('MainController',
         $scope.statFilter = {
 
         };
-        $scope.getTestWebPages = function(event, test) {
+        $scope.webPagesType = {
+            TEST: 0,
+            ALL: 1
+        };
+        var webPagesType = [
+            function(test) {
+                return getApiUrl() + 'test/' + test.Id;
+            },
+            function(website) {
+                return getApiUrl() + website.Id + '/webpages';
+            }
+        ];
+        $scope.getWebPages = function(event, type, parent) {
             event.preventDefault();
+            if (!webPagesType[type]) {
+                $scope.hints.stat = "Undefined error";
+                return;
+            }
+            if (type === $scope.webPagesType.ALL) {
+                $scope.stat.website = parent;
+                stat.websites = $scope.stat.collection;
+                $scope.stat.collection = null;
+            }
             $scope.hints.stat = "Retrieving Web Pages...";
             gettingData = true;
-            $http.get(getApiUrl() + 'test/' + test.Id).then(
+            $http.get(webPagesType[type](parent)).then(
                 processResponse, processResponse
             );
             function processResponse(response) {
                 if (~~(response.status / 100) === 2) {
-                    $scope.stat.test = test;
-                    stat.tests = $scope.stat.collection;
-                    $scope.collection = null;
-                    $scope.stat.webPages = response.data.WebPages;
-                    $scope.displaying = $scope.displayingEnum.WEBPAGES;
+                    switch (type) {
+                        case $scope.webPagesType.TEST:
+                            var test = parent;
+                            $scope.stat.test = test;
+                            stat.tests = $scope.stat.collection;
+                            $scope.stat.webPages = response.data.WebPages;
+                            $scope.displaying = $scope.displayingEnum.WEBPAGES;
+                            break;
+
+                        case $scope.webPagesType.ALL:
+                            var website = parent;
+                            $scope.stat.website = stat.website = website;
+                            $scope.stat.webPages = response.data.WebPages;
+                            $scope.displaying = $scope.displayingEnum.ALL_WEBPAGES;
+                    }
+                    
                     $scope.hints.stat = '';
                 } else {
                     $scope.hints.stat = "Failed To Retrieve Web Pages";
+                    if (type === $scope.webPagesType.ALL) {
+                        $scope.stat.website = parent;
+                        $scope.stat.collection = stat.websites;
+                    }
                 }
                 gettingData = false;
             }
         };
-        $scope.getAllWebPages = function(event, website) {
-            event.preventDefault();
+        $scope.getAllWebPages = function (event, website) {
+            
         }
-        $scope.download = function (event, view) {
+        var downloadWrapper = {
+            header: [
+                '<html>' +
+                '<head>' +
+                ' <style>\n' +
+                '   button {\n' +
+                '       display: none;\n' +
+                '   }\n' +
+                '    table {\n' +
+                '        border-collapse: collapse;\n' +
+                '    }\n' +
+                '        table td, table th {\n' +
+                '            border: 1px solid black;\n' +
+                '            padding: 0.2rem;\n' +
+                '        }\n' +
+                '        .header {\n' +
+                '            letter-spacing: 0.1rem;\n' +
+                '            text-align: center;\n' +
+                '            font-size: 3rem;\n' +
+                '            font-weight: 600;\n' +
+                '            text-transform: uppercase;\n' +
+                '        }\n' +
+                '        .signature {\n' +
+                '            text-align: right;\n' +
+                '            font-weight: 500;\n' +
+                '            padding-top: 30px;\n' +
+                '            font-size: 1.5rem;\n' +
+                '            font-style: oblique;\n' +
+                '            letter-spacing: 0.15rem;\n' +
+                '        }\n' +
+                '    .center {\n' +
+                '        text-align: center;\n' +
+                '        font-size: 2rem;\n' +
+                '        letter-spacing: 0.15rem;\n' +
+                '        padding: 20px 0;\n' +
+                '    }\n' +
+                '</style>' +
+                '</head>' +
+                '<body>' +
+                '<h1 class="header">Report: ',
+                '</h1>'
+            ],
+            footer: [
+                '<div class="signature">',
+                '</div>' +
+                '</body>' +
+                '</html>'
+            ]
+        }
+        $scope.download = function (event) {
             event.preventDefault();
+            var view = $scope.currentView;
+            var content = downloadWrapper.header[0];
             switch (view) {
                 case $scope.views.STAT:
-                    if (!$scope.stat.website && !$scope.stat.test) {
-                        return;
-                    }
                     $scope.hints.stat = "Preparing your file...";
-                    if ($scope.stat.website && !$scope.stat.test) {
-                        var content = $('#statWebsite')[0].outerHTML +
-                            $('#statTests')[0].outerHTML;
-                    } else {
-                        var content = $('#statTest').html();
-                        if ($scope.stat.webPages) {
-                            content += '<table>' + $('#statWebPages table').html() + '</table>';
-                        }
+                    switch ($scope.displaying) {
+                        case $scope.displayingEnum.TESTS:
+                            content += 'all tests of ' +
+                                $scope.stat.website.Name +
+                                downloadWrapper.header[1] +
+                                '<table>' + $('#statTests').html() + '</table>';
+                            break;
+                        case $scope.displayingEnum.WEBPAGES:
+                            content += 'test of ' + $scope.stat.website.Name +
+                                downloadWrapper.header[1] +
+                                $('#statTest').html() +
+                                '<h1 class="center">Web Pages</h1>' +
+                                '<table>' + $('#statWebPages').html().replace(/<button.*>.*<button\/>/, '') + '</table>';
+                            break;
+                        case $scope.displayingEnum.ALL_WEBPAGES:
+                            content += 'all web pages of ' + $scope.stat.website.Name +
+                                downloadWrapper.header[1] +
+                                '<table>' + $('#statWebPages').html().replace(/<button.*>.*<button\/>/, '') + '</table>';
+                            break;
                     }
-                    saveAs(new Blob([content], { type: "text/plain;charset=utf-8" }), 'report.html');
-                    $scope.hints.stat = "";
+                    break;
+
+                case $scope.views.TEST:
+                    $scope.hints.test = "Preparing your file...";
+                    content += 'test result of ' +
+                        $scope.result.test.WebsiteName +
+                        downloadWrapper.header[1] +
+                        $('#resultTest').html();
+                    var table = $('#resultWebPages');
+                    if (table.length && table.find('td').length) {
+                        content += '<h1 class="center">Web Pages</h1>' +'<table>' +
+                        table.html() +
+                        '</table>';
+                    }
                     break;
             }
+            var now = new Date;
+            content += downloadWrapper.footer[0] +
+                [now.getFullYear(), now.getMonth() + 1, now.getDate()].join('/') +
+                ' ' +
+                [now.getHours(), now.getMinutes(), now.getSeconds()].join(':') +
+                downloadWrapper.footer[1];
+            saveAs(new Blob([content], { type: "text/plain;charset=utf-8" }), 'report.html');
+            $scope.hints.stat = "";
+            $scope.hints.test = "";
         };
         $scope.goBack = function (event) {
             event.preventDefault();
-            if ($scope.displaying === $scope.displayingEnum.TESTS) {
+            if ($scope.displaying === $scope.displayingEnum.TESTS ||
+                $scope.displaying === $scope.displayingEnum.ALL_WEBPAGES) {
                 $scope.stat.collection = stat.websites;
                 $scope.stat.website = null;
+                if ($scope.displaying === $scope.displayingEnum.ALL_WEBPAGES) {
+                    $scope.stat.webPages = '';
+                }
                 $scope.displaying = $scope.displayingEnum.WEBSITES;
             } else if ($scope.displaying === $scope.displayingEnum.WEBPAGES) {
                 $scope.stat.test = '';

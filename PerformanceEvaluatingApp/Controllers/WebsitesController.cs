@@ -6,6 +6,7 @@ using System.Data.Entity.Infrastructure;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Runtime.Remoting.Channels;
 using System.Threading.Tasks;
 using System.Web.Http;
@@ -19,7 +20,7 @@ using Newtonsoft.Json.Linq;
 using PerformanceEvaluatingApp.Models;
 using HttpCodeModel = PerformanceEvaluatingApp.Models.HttpStatusCode;
 using HttpStatusCode = System.Net.HttpStatusCode;
-
+using System.Text;
 
 namespace PerformanceEvaluatingApp.Controllers
 {
@@ -35,14 +36,17 @@ namespace PerformanceEvaluatingApp.Controllers
         private List<WebPage> _webPages;
         private HttpCodeModel[] _cachedCodes;
 
-
+        private StringContent MakeJsonContent(object json)
+        {   
+            return new StringContent(json.ToString(), Encoding.UTF8, "application/json");
+        }
         // GET: websites/
         [Route("")]
         public HttpResponseMessage GetWebsites()
         {
             return new HttpResponseMessage(HttpStatusCode.OK)
             {
-                Content = new StringContent(JsonConvert.SerializeObject(_dbContext.Websites))
+                Content = MakeJsonContent(JsonConvert.SerializeObject(_dbContext.Websites))
             };
         }
 
@@ -66,7 +70,7 @@ namespace PerformanceEvaluatingApp.Controllers
             }
             var json = JObject.FromObject(_website);
             json.Add("Tests", jTests);
-            response.Content = new StringContent(json.ToString());
+            response.Content = MakeJsonContent(json);
 
             return response;
         }
@@ -88,7 +92,7 @@ namespace PerformanceEvaluatingApp.Controllers
             }
             var json = JObject.FromObject(_website);
             json.Add("WebPages", JToken.FromObject(_webPages));
-            response.Content = new StringContent(json.ToString());
+            response.Content = MakeJsonContent(json);
 
             return response;
         }
@@ -106,7 +110,7 @@ namespace PerformanceEvaluatingApp.Controllers
             var json = JObject.FromObject(_test);
             json.Add("WebPages", JToken.FromObject(_test.WebPages));
             json.Add("WebsiteName", _test.Website.Name);
-            response.Content = new StringContent(json.ToString());
+            response.Content = MakeJsonContent(json);
 
             return response;
         }
@@ -117,7 +121,7 @@ namespace PerformanceEvaluatingApp.Controllers
         {
             return new HttpResponseMessage(HttpStatusCode.OK)
             {
-                Content = new StringContent(
+                Content = MakeJsonContent(
                     JsonConvert.SerializeObject(_dbContext.Tests.Include("IpAddressInfo"))
                 )
             };
@@ -162,7 +166,7 @@ namespace PerformanceEvaluatingApp.Controllers
             json.Add("WebsiteName", JToken.FromObject(_test.Website.Name));
             return new HttpResponseMessage(HttpStatusCode.OK)
             {
-                Content = new StringContent(json.ToString())
+                Content = MakeJsonContent(json.ToString())
             };
         }
 
@@ -333,7 +337,7 @@ namespace PerformanceEvaluatingApp.Controllers
                 return new HttpResponseMessage(HttpStatusCode.NotFound);
             }
             var json = new JObject();
-            if (DeleteOnlyTest())
+            if (MarkTestOnlyForDeletion())
             {
                 json.Add("WebsiteId", _test.WebsiteId);
             }
@@ -347,11 +351,11 @@ namespace PerformanceEvaluatingApp.Controllers
 
             return new HttpResponseMessage(HttpStatusCode.OK)
             {
-                Content = new StringContent(json.ToString())
+                Content = MakeJsonContent(json.ToString())
             };
         }
 
-        private bool DeleteOnlyTest()
+        private bool MarkTestOnlyForDeletion()
         {
             _website = _test.Website;
             _dbContext.Entry(_test.IpAddressInfo).State = EntityState.Deleted;

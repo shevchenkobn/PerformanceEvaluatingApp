@@ -23,12 +23,12 @@
         </form>
     </div>
     <div ng-show="sort.order.length">Sorted by: {{sort.order.join(', ')}}</div>
-    <table id="output">
+    <table id="{{tableId}}">
         <tr>
             <th ng-repeat="header in webPageHeaders">
                 {{header.value}}
-                <button ng-click="sort($event, header, -1)">v</button>
-                <button ng-click="sort($event, header, 1)">^</button>
+                <button ng-click="sort($event, header, -1)">D</button>
+                <button ng-click="sort($event, header, 1)">A</button>
                 <button ng-click="sort($event, header, 0)">x</button>
             </th>
         </tr>
